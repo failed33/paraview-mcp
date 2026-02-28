@@ -1,0 +1,17 @@
+.venv/
+docs/plans/
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.vscode/
+.idea/
+.DS_Store
+.env
+.env.local
+__pycache__/
+*.egg-info/
