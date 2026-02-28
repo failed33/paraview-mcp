@@ -8,4 +8,7 @@ rules:
       - server
       - bridge
       - ci
+      - deps
+      - docker
       - docs
+      - test

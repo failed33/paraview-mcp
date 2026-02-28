@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
 
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -15,7 +21,7 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
-        uses: google-github-actions/release-please-action@v4
+        uses: google-github-actions/release-please-action@e4dc86ba9405554aeba3c6bb2d169500e7d3b4ee # v4.1.1
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
@@ -28,14 +34,14 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
       - name: Build package
         run: cd Wrapping/Python/MCPServer && uv build
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           packages-dir: Wrapping/Python/MCPServer/dist
 
@@ -46,13 +52,16 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container: kitware/paraview_org-plugin-devel:6.0.1
     env:
       PARAVIEW_PREFIX: /builds/gitlab-kitware-sciviz-ci/build/install
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
     steps:
       - name: Checkout source
         run: |
-          git clone --depth 1 --branch ${{ needs.release-please.outputs.tag_name }} \
+          git clone --depth 1 --branch "$TAG_NAME" \
             https://github.com/${{ github.repository }}.git source
 
       - name: Configure
@@ -75,8 +84,7 @@ jobs:
 
       - name: Package tarball
         run: |
-          VERSION="${{ needs.release-please.outputs.tag_name }}"
-          VERSION="${VERSION#v}"
+          VERSION="${TAG_NAME#v}"
           ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-linux-x86_64"
           mkdir -p "${ARCHIVE_DIR}"
           cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
@@ -87,7 +95,7 @@ jobs:
           echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: plugin-linux-x86_64
           path: ${{ env.ARCHIVE_NAME }}
@@ -100,17 +108,21 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: macos-14
+    timeout-minutes: 120
+    permissions:
+      contents: read
     env:
       PARAVIEW_VERSION: v6.0.1
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install dependencies
         run: brew install cmake ninja qt@5
 
       - name: Cache ParaView SDK
         id: cache-paraview
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: /tmp/paraview-sdk
           key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt5
@@ -158,8 +170,7 @@ jobs:
 
       - name: Package tarball
         run: |
-          VERSION="${{ needs.release-please.outputs.tag_name }}"
-          VERSION="${VERSION#v}"
+          VERSION="${TAG_NAME#v}"
           ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-macos-arm64"
           mkdir -p "${ARCHIVE_DIR}"
           cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
@@ -170,7 +181,7 @@ jobs:
           echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: plugin-macos-arm64
           path: ${{ env.ARCHIVE_NAME }}
@@ -184,9 +195,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: plugin-*
           merge-multiple: true
@@ -194,4 +207,4 @@ jobs:
       - name: Upload to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ needs.release-please.outputs.tag_name }} *.tar.gz --repo ${{ github.repository }}
+        run: gh release upload "$TAG_NAME" *.tar.gz --repo "${{ github.repository }}"

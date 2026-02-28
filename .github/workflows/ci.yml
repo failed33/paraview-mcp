@@ -17,11 +17,15 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
       - run: pip install pre-commit
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
       - run: pre-commit run --all-files
 
   python:
@@ -30,9 +34,9 @@ jobs:
       run:
         working-directory: Wrapping/Python/MCPServer
     steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
       - run: uv sync --extra dev
@@ -45,12 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}-ci:6.0.1
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install build dependencies
         run: |
           apt-get update
           apt-get install -y --no-install-recommends python3-pip qttools5-dev
-          pip3 install cmake
+          pip3 install cmake==3.31.4
       - name: Configure
         run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
       - name: Build
