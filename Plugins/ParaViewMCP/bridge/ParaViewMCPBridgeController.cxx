@@ -72,9 +72,8 @@ bool ParaViewMCPBridgeController::startServer(const QString& host,
   if (!this->PythonBridge.initialize(&pythonError))
   {
     this->setLog(
-      QStringLiteral("Python bridge: %1").arg(pythonError.isEmpty()
-        ? QStringLiteral("initialization failed")
-        : pythonError));
+      QStringLiteral("Python bridge: %1")
+        .arg(pythonError.isEmpty() ? QStringLiteral("initialization failed") : pythonError));
   }
 
   ParaViewMCPServerConfig requestedConfig = this->Config;

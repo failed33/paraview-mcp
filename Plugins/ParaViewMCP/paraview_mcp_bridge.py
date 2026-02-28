@@ -110,14 +110,21 @@ def inspect_pipeline() -> str:
 
     for name, proxy in simple.GetSources().items():
         entry = {
-            "name": "/".join(str(part) for part in name) if isinstance(name, tuple) else str(name),
+            "name": "/".join(str(part) for part in name)
+            if isinstance(name, tuple)
+            else str(name),
             "id": None,
             "proxy_type": type(proxy).__name__,
             "representation": None,
             "properties": {},
         }
 
-        for method_name in ("GetGlobalIDAsString", "GetGlobalID", "GetXMLLabel", "GetXMLName"):
+        for method_name in (
+            "GetGlobalIDAsString",
+            "GetGlobalID",
+            "GetXMLLabel",
+            "GetXMLName",
+        ):
             method = getattr(proxy, method_name, None)
             if callable(method):
                 try:

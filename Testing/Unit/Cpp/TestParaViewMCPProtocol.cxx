@@ -22,8 +22,8 @@ private slots:
 void TestParaViewMCPProtocol::encodesAndDecodesSingleFrame()
 {
   const QJsonObject payload{
-    { "request_id", QStringLiteral("one") },
-    { "type", QStringLiteral("ping") },
+    {"request_id", QStringLiteral("one")},
+    {"type", QStringLiteral("ping")},
   };
 
   QByteArray buffer = ParaViewMCP::encodeMessage(payload);
@@ -40,12 +40,12 @@ void TestParaViewMCPProtocol::encodesAndDecodesSingleFrame()
 void TestParaViewMCPProtocol::decodesBackToBackFrames()
 {
   const QJsonObject first{
-    { "request_id", QStringLiteral("one") },
-    { "type", QStringLiteral("ping") },
+    {"request_id", QStringLiteral("one")},
+    {"type", QStringLiteral("ping")},
   };
   const QJsonObject second{
-    { "request_id", QStringLiteral("two") },
-    { "type", QStringLiteral("ping") },
+    {"request_id", QStringLiteral("two")},
+    {"type", QStringLiteral("ping")},
   };
 
   QByteArray buffer = ParaViewMCP::encodeMessage(first) + ParaViewMCP::encodeMessage(second);
@@ -60,9 +60,9 @@ void TestParaViewMCPProtocol::decodesBackToBackFrames()
 void TestParaViewMCPProtocol::waitsForPartialFrames()
 {
   const QJsonObject payload{
-    { "request_id", QStringLiteral("one") },
-    { "type", QStringLiteral("ping") },
-    { "params", QJsonObject{ { "value", 42 } } },
+    {"request_id", QStringLiteral("one")},
+    {"type", QStringLiteral("ping")},
+    {"params", QJsonObject{{"value", 42}}},
   };
 
   const QByteArray encoded = ParaViewMCP::encodeMessage(payload);

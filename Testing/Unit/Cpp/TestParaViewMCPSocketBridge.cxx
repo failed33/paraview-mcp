@@ -71,10 +71,10 @@ void TestParaViewMCPSocketBridge::malformedFramesCloseTheConnection()
   QTRY_VERIFY_WITH_TIMEOUT(bridge.hasClient(), 2000);
 
   client.write(ParaViewMCP::encodeMessage(QJsonObject{
-    { "request_id", QStringLiteral("hello-1") },
-    { "type", QStringLiteral("hello") },
-    { "protocol_version", ParaViewMCP::ProtocolVersion },
-    { "auth_token", QString() },
+    {"request_id", QStringLiteral("hello-1")},
+    {"type", QStringLiteral("hello")},
+    {"protocol_version", ParaViewMCP::ProtocolVersion},
+    {"auth_token", QString()},
   }));
   client.write(QByteArray::fromHex("000000027b7b"));
   client.flush();
@@ -103,12 +103,13 @@ void TestParaViewMCPSocketBridge::helloCompletesTheHandshake()
   QTcpSocket client;
   QVERIFY(connectClientSocket(client, bridge.serverPort(), &error));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("hello-1") },
-    { "type", QStringLiteral("hello") },
-    { "protocol_version", ParaViewMCP::ProtocolVersion },
-    { "auth_token", QString() },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("hello-1")},
+                   {"type", QStringLiteral("hello")},
+                   {"protocol_version", ParaViewMCP::ProtocolVersion},
+                   {"auth_token", QString()},
+                 });
 
   QJsonObject response;
   QVERIFY(waitForJsonMessage(client, &response, &error));
@@ -136,12 +137,13 @@ void TestParaViewMCPSocketBridge::disconnectResetsSessionState()
   QTcpSocket client;
   QVERIFY(connectClientSocket(client, bridge.serverPort(), &error));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("hello-1") },
-    { "type", QStringLiteral("hello") },
-    { "protocol_version", ParaViewMCP::ProtocolVersion },
-    { "auth_token", QString() },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("hello-1")},
+                   {"type", QStringLiteral("hello")},
+                   {"protocol_version", ParaViewMCP::ProtocolVersion},
+                   {"auth_token", QString()},
+                 });
 
   QJsonObject response;
   QVERIFY(waitForJsonMessage(client, &response, &error));
@@ -173,22 +175,24 @@ void TestParaViewMCPSocketBridge::preservesRequestIdsAcrossResponses()
   QTcpSocket client;
   QVERIFY(connectClientSocket(client, bridge.serverPort(), &error));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("hello-1") },
-    { "type", QStringLiteral("hello") },
-    { "protocol_version", ParaViewMCP::ProtocolVersion },
-    { "auth_token", QString() },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("hello-1")},
+                   {"type", QStringLiteral("hello")},
+                   {"protocol_version", ParaViewMCP::ProtocolVersion},
+                   {"auth_token", QString()},
+                 });
 
   QJsonObject response;
   QVERIFY(waitForJsonMessage(client, &response, &error));
   QCOMPARE(response.value(QStringLiteral("request_id")).toString(), QStringLiteral("hello-1"));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("ping-1") },
-    { "type", QStringLiteral("ping") },
-    { "params", QJsonObject() },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("ping-1")},
+                   {"type", QStringLiteral("ping")},
+                   {"params", QJsonObject()},
+                 });
 
   QVERIFY(waitForJsonMessage(client, &response, &error));
   QCOMPARE(response.value(QStringLiteral("request_id")).toString(), QStringLiteral("ping-1"));

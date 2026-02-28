@@ -21,9 +21,9 @@ void TestParaViewMCPLocalBridge::handlesAHelloPingAndExecuteSequence()
 {
   FakeParaViewMCPPythonBridge bridgeImpl;
   bridgeImpl.ExecutePayload = QJsonObject{
-    { "ok", true },
-    { "stdout", QStringLiteral("42\n") },
-    { "stderr", QString() },
+    {"ok", true},
+    {"stdout", QStringLiteral("42\n")},
+    {"stderr", QString()},
   };
   ParaViewMCPRequestHandler handler(bridgeImpl);
   ParaViewMCPSocketBridge bridge(bridgeImpl, handler);
@@ -40,31 +40,34 @@ void TestParaViewMCPLocalBridge::handlesAHelloPingAndExecuteSequence()
   QTcpSocket client;
   QVERIFY(connectClientSocket(client, bridge.serverPort(), &error));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("hello-1") },
-    { "type", QStringLiteral("hello") },
-    { "protocol_version", ParaViewMCP::ProtocolVersion },
-    { "auth_token", QString() },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("hello-1")},
+                   {"type", QStringLiteral("hello")},
+                   {"protocol_version", ParaViewMCP::ProtocolVersion},
+                   {"auth_token", QString()},
+                 });
 
   QJsonObject response;
   QVERIFY(waitForJsonMessage(client, &response, &error));
   QCOMPARE(response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("ping-1") },
-    { "type", QStringLiteral("ping") },
-    { "params", QJsonObject() },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("ping-1")},
+                   {"type", QStringLiteral("ping")},
+                   {"params", QJsonObject()},
+                 });
 
   QVERIFY(waitForJsonMessage(client, &response, &error));
   QCOMPARE(response.value(QStringLiteral("request_id")).toString(), QStringLiteral("ping-1"));
 
-  writeJsonFrame(client, QJsonObject{
-    { "request_id", QStringLiteral("exec-1") },
-    { "type", QStringLiteral("execute_python") },
-    { "params", QJsonObject{ { "code", QStringLiteral("print(42)") } } },
-  });
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("exec-1")},
+                   {"type", QStringLiteral("execute_python")},
+                   {"params", QJsonObject{{"code", QStringLiteral("print(42)")}}},
+                 });
 
   QVERIFY(waitForJsonMessage(client, &response, &error));
   QCOMPARE(response.value(QStringLiteral("request_id")).toString(), QStringLiteral("exec-1"));
@@ -93,12 +96,13 @@ void TestParaViewMCPLocalBridge::resetsHandshakeStateAcrossReconnects()
   {
     QTcpSocket firstClient;
     QVERIFY(connectClientSocket(firstClient, bridge.serverPort(), &error));
-    writeJsonFrame(firstClient, QJsonObject{
-      { "request_id", QStringLiteral("hello-1") },
-      { "type", QStringLiteral("hello") },
-      { "protocol_version", ParaViewMCP::ProtocolVersion },
-      { "auth_token", QString() },
-    });
+    writeJsonFrame(firstClient,
+                   QJsonObject{
+                     {"request_id", QStringLiteral("hello-1")},
+                     {"type", QStringLiteral("hello")},
+                     {"protocol_version", ParaViewMCP::ProtocolVersion},
+                     {"auth_token", QString()},
+                   });
 
     QJsonObject response;
     QVERIFY(waitForJsonMessage(firstClient, &response, &error));
@@ -111,11 +115,12 @@ void TestParaViewMCPLocalBridge::resetsHandshakeStateAcrossReconnects()
 
   QTcpSocket secondClient;
   QVERIFY(connectClientSocket(secondClient, bridge.serverPort(), &error));
-  writeJsonFrame(secondClient, QJsonObject{
-    { "request_id", QStringLiteral("ping-1") },
-    { "type", QStringLiteral("ping") },
-    { "params", QJsonObject() },
-  });
+  writeJsonFrame(secondClient,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("ping-1")},
+                   {"type", QStringLiteral("ping")},
+                   {"params", QJsonObject()},
+                 });
 
   QJsonObject response;
   QVERIFY(waitForJsonMessage(secondClient, &response, &error));

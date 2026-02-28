@@ -18,11 +18,11 @@ public:
   QString InspectError;
   QString ScreenshotError;
 
-  QJsonObject ExecutePayload = QJsonObject{ { "ok", true } };
-  QJsonObject InspectPayload = QJsonObject{ { "count", 0 } };
+  QJsonObject ExecutePayload = QJsonObject{{"ok", true}};
+  QJsonObject InspectPayload = QJsonObject{{"count", 0}};
   QJsonObject ScreenshotPayload = QJsonObject{
-    { "format", QStringLiteral("png") },
-    { "image_data", QStringLiteral("ZmFrZQ==") },
+    {"format", QStringLiteral("png")},
+    {"image_data", QStringLiteral("ZmFrZQ==")},
   };
 
   int ResetCalls = 0;
@@ -63,10 +63,7 @@ public:
     return this->ResetResult;
   }
 
-  bool executePython(
-    const QString& code,
-    QJsonObject* result,
-    QString* error = nullptr) override
+  bool executePython(const QString& code, QJsonObject* result, QString* error = nullptr) override
   {
     ++this->ExecuteCalls;
     this->LastCode = code;
@@ -103,11 +100,8 @@ public:
     return true;
   }
 
-  bool captureScreenshot(
-    int width,
-    int height,
-    QJsonObject* result,
-    QString* error = nullptr) override
+  bool
+  captureScreenshot(int width, int height, QJsonObject* result, QString* error = nullptr) override
   {
     ++this->ScreenshotCalls;
     this->LastWidth = width;

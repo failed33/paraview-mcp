@@ -86,9 +86,7 @@ void TestParaViewMCPServerConfig::rejectsNonLoopbackWithoutToken()
 
   QString error;
   QVERIFY(!config.validateForListen(nullptr, &error));
-  QCOMPARE(
-    error,
-    QStringLiteral("A non-loopback bind address requires an authentication token"));
+  QCOMPARE(error, QStringLiteral("A non-loopback bind address requires an authentication token"));
 }
 
 void TestParaViewMCPServerConfig::acceptsNonLoopbackWithToken()
@@ -110,9 +108,7 @@ void TestParaViewMCPServerConfig::rejectsInvalidHosts()
 
   QString error;
   QVERIFY(!config.validateForListen(nullptr, &error));
-  QCOMPARE(
-    error,
-    QStringLiteral("Listen host must be 'localhost' or a literal IP address"));
+  QCOMPARE(error, QStringLiteral("Listen host must be 'localhost' or a literal IP address"));
 }
 
 QTEST_APPLESS_MAIN(TestParaViewMCPServerConfig)

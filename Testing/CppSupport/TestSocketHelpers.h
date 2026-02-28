@@ -12,11 +12,8 @@
 #include <QTcpSocket>
 #include <QTest>
 
-inline bool connectClientSocket(
-  QTcpSocket& socket,
-  quint16 port,
-  QString* error,
-  int timeoutMs = 2000)
+inline bool
+connectClientSocket(QTcpSocket& socket, quint16 port, QString* error, int timeoutMs = 2000)
 {
   socket.connectToHost(QHostAddress::LocalHost, port);
 
@@ -45,11 +42,8 @@ inline void writeJsonFrame(QTcpSocket& socket, const QJsonObject& message)
   socket.flush();
 }
 
-inline bool waitForJsonMessage(
-  QTcpSocket& socket,
-  QJsonObject* message,
-  QString* error,
-  int timeoutMs = 2000)
+inline bool
+waitForJsonMessage(QTcpSocket& socket, QJsonObject* message, QString* error, int timeoutMs = 2000)
 {
   QByteArray buffer;
   QList<QJsonObject> messages;

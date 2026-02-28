@@ -16,9 +16,9 @@ cd /Users/mnkirsch/Coding/temp/mcp/paraview-mcp/Wrapping/Python/MCPServer
 pip install -e .
 ```
 
-## Environment
+## Environment Optional Configurations
 
-- `PARAVIEW_HOST` defaults to `127.0.0.1`
+- `PARAVIEW_HOST` defaults to `127.0.0.1` -> set this for remote connections
 - `PARAVIEW_PORT` defaults to `9877`
 - `PARAVIEW_AUTH_TOKEN` is required for non-loopback targets
 
