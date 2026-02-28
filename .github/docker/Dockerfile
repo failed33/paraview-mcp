@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qtbase5-dev \
     qttools5-dev \
     qttools5-dev-tools \
+    qtxmlpatterns5-dev-tools \
     libqt5svg5-dev \
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
@@ -79,7 +80,7 @@ COPY --from=builder /opt/paraview /opt/paraview
 
 ENV PATH="/opt/paraview/bin:${PATH}"
 ENV CMAKE_PREFIX_PATH="/opt/paraview/lib/cmake"
-ENV LD_LIBRARY_PATH="/opt/paraview/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/paraview/lib"
 ENV ParaView_DIR="/opt/paraview/lib/cmake/paraview-6.0"
 
 WORKDIR /workspace
