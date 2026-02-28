@@ -22,9 +22,14 @@ connectClientSocket(QTcpSocket& socket, quint16 port, QString* error, int timeou
   while (timer.elapsed() < timeoutMs)
   {
     QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
-    if (socket.state() == QAbstractSocket::ConnectedState)
+    if (socket.state() == QAbstractSocket::ConnectedState ||
+        socket.state() == QAbstractSocket::ClosingState || socket.bytesAvailable() > 0)
     {
       return true;
+    }
+    if (socket.state() == QAbstractSocket::UnconnectedState && timer.elapsed() > 100)
+    {
+      break;
     }
     QTest::qWait(10);
   }
