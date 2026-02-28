@@ -1,0 +1,82 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  python-coverage:
+    name: Python Coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Wrapping/Python/MCPServer
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+      - run: uv sync --extra dev
+      - name: Run pytest with coverage
+        run: |
+          uv run pytest \
+            --cov=paraview_mcp \
+            --cov-report=xml:coverage.xml \
+            --cov-report=term-missing
+      - name: Upload Python coverage
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: Wrapping/Python/MCPServer/coverage.xml
+          flags: python
+          fail_ci_if_error: false
+
+  cpp-coverage:
+    name: C++ Coverage
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}-ci:6.0.1
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-pip qttools5-dev llvm
+          pip3 install cmake==3.31.4
+      - name: Configure (coverage preset)
+        run: cmake --preset coverage -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
+      - name: Build
+        run: cmake --build --preset coverage
+      - name: Run tests
+        run: ctest --preset coverage
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LLVM_PROFILE_FILE: "build/%p.profraw"
+      - name: Generate lcov report
+        run: |
+          llvm-profdata merge -sparse build/*.profraw -o build/coverage.profdata
+          TEST_BIN=$(find build -type f -perm /111 -path "*/Testing/*" | head -1)
+          OBJECT_ARGS=$(find build -type f -perm /111 -path "*/Testing/*" | tail -n +2 | sed 's/^/-object /' | tr '\n' ' ')
+          llvm-cov export \
+            --format=lcov \
+            --instr-profile=build/coverage.profdata \
+            $TEST_BIN \
+            $OBJECT_ARGS \
+            --ignore-filename-regex="(Testing/|ThirdParty/|/opt/|/usr/)" \
+            > build/cpp_coverage.lcov
+      - name: Upload C++ coverage
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build/cpp_coverage.lcov
+          flags: cpp
+          fail_ci_if_error: false
