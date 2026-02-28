@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.2](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.1...ParaViewMCP-v0.1.2) (2026-02-28)
+
+
+### Features
+
+* **ci:** add CodeQL security scanning and Codecov coverage ([ff8d44f](https://github.com/failed33/paraview-mcp/commit/ff8d44f53a1ddd450537a0fe057eb7d387210b2a))
+* **ci:** add macOS arm64 build and include plugins.xml in release ([079feb4](https://github.com/failed33/paraview-mcp/commit/079feb46002418cbaf93a06145cf986699851f79))
+* **ci:** add pre-built Linux plugin binary to GitHub Releases ([d1c6ee6](https://github.com/failed33/paraview-mcp/commit/d1c6ee6fc68cd843951671a75fbfce6b3a453fc7))
+* **server:** rename PyPI package to paraview-mcp-server ([5548bcd](https://github.com/failed33/paraview-mcp/commit/5548bcd413ebeb67ca46aa45812fe5f480fb7b7e))
+
+
+### Bug Fixes
+
+* **ci:** add pypi environment to release workflow for trusted publishing ([8be3bb2](https://github.com/failed33/paraview-mcp/commit/8be3bb2778c5f34dd2ddd8cdd07daa4968f32bd9))
+* **ci:** harden CI/CD security and apply code review findings ([8592ad0](https://github.com/failed33/paraview-mcp/commit/8592ad0273b207ead8a5f28e5c492dcbabe1156b))
+* **ci:** install git, curl, gpg for Codecov upload in container ([21120f8](https://github.com/failed33/paraview-mcp/commit/21120f86d845acecbe08eca71205e6625e1a77b5))
+* **ci:** use GCC coverage flags instead of LLVM in C++ coverage job ([107b9a6](https://github.com/failed33/paraview-mcp/commit/107b9a6eeae19286afbb250a3cf4565cf41cf67f))
+
 ## [0.1.1](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.0...ParaViewMCP-v0.1.1) (2026-02-28)
 
 
