@@ -11,9 +11,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from paraview_mcp.protocol import (
+    MAX_FRAME_BYTES,
     FrameBuffer,
     FrameTooLargeError,
-    MAX_FRAME_BYTES,
     encode_message,
     recv_message,
 )

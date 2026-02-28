@@ -53,7 +53,9 @@ class ServerRuntimeTests(unittest.TestCase):
             async with server_module.server_lifespan(server_module.mcp) as state:
                 return state
 
-        with patch("paraview_mcp.server.get_paraview_connection", side_effect=RuntimeError("offline")):
+        with patch(
+            "paraview_mcp.server.get_paraview_connection", side_effect=RuntimeError("offline")
+        ):
             state = asyncio.run(runner())
 
         self.assertEqual(state, {})

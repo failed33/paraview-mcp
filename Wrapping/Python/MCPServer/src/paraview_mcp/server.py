@@ -9,9 +9,10 @@ import os
 import socket
 import threading
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
+from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP, Image
 
@@ -94,7 +95,9 @@ class ParaViewConnection:
         finally:
             self.sock = None
 
-    def send_command(self, command_type: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def send_command(
+        self, command_type: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Send a command and return its result payload."""
         with self._lock:
             self._ensure_connected()
@@ -214,9 +217,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
     host = os.getenv("PARAVIEW_HOST", DEFAULT_HOST)
     auth_token = os.getenv("PARAVIEW_AUTH_TOKEN", "")
     if not auth_token and not is_loopback_host(host):
-        raise RuntimeError(
-            "PARAVIEW_AUTH_TOKEN is required when connecting to a non-loopback host"
-        )
+        raise RuntimeError("PARAVIEW_AUTH_TOKEN is required when connecting to a non-loopback host")
 
     try:
         get_paraview_connection()
