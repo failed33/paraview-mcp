@@ -47,7 +47,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install CMake 3.24+
-        run: pip3 install cmake
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-pip
+          pip3 install cmake
       - name: Configure
         run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
       - name: Build
