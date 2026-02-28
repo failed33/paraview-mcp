@@ -1,0 +1,24 @@
+# Changelog
+
+## [0.1.1](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.0...ParaViewMCP-v0.1.1) (2026-02-28)
+
+
+### Features
+
+* add open-source publication scaffolding ([c165ad9](https://github.com/failed33/paraview-mcp/commit/c165ad9180df3e8562c911ed4aa5afdb09c9eae9))
+
+
+### Bug Fixes
+
+* **ci:** add missing qtxmlpatterns5-dev-tools to Docker image ([4d33d95](https://github.com/failed33/paraview-mcp/commit/4d33d9567cfa5e1b08317bae347ee30d5f156e7f))
+* **ci:** add Qt5Help dev package and fix Dockerfile runtime deps ([ba5c1c6](https://github.com/failed33/paraview-mcp/commit/ba5c1c671f3f7d2136c8fb480b589edeaa27b88d))
+* **ci:** configure pyrefly search paths for src layout ([a2c9633](https://github.com/failed33/paraview-mcp/commit/a2c9633af25a69509a9063026c044084c34d4114))
+* **ci:** fix pyrefly config syntax and ruff E402 in tests ([3934483](https://github.com/failed33/paraview-mcp/commit/39344834e00e866af3a56002d1c5e05076e18635))
+* **ci:** fix pyrefly missing-import errors and install dev dependencies ([2939df8](https://github.com/failed33/paraview-mcp/commit/2939df8f3f5447b5664c3e46a9e9b23aac1f64cf))
+* **ci:** install CMake 3.24+ in cpp job via pip ([a57b4b0](https://github.com/failed33/paraview-mcp/commit/a57b4b0337642bf4315ea9be8ce25f320edaced4))
+* **ci:** install python3-pip before cmake in cpp container ([3e5da3a](https://github.com/failed33/paraview-mcp/commit/3e5da3aefd77afac6479a80c82a72602aef0f08a))
+* **ci:** use Qt offscreen platform for headless C++ tests ([9cb1240](https://github.com/failed33/paraview-mcp/commit/9cb12407e53f1f6e24c1e171f26ac5de4d8838fb))
+* **plugin:** handle fast server-close in test socket helper ([6f631b2](https://github.com/failed33/paraview-mcp/commit/6f631b29b7ed8a715254d8f9487a33ea573689bb))
+* **plugin:** increase test socket timeout for CI containers ([bd903ea](https://github.com/failed33/paraview-mcp/commit/bd903ea77bbd2a5e840e3baef4e6dd1e1fb67015))
+* **server:** add ruff src path for first-party import detection in CI ([6e6648e](https://github.com/failed33/paraview-mcp/commit/6e6648effbe03f29d4066d35c015148f0e5db704))
+* **server:** replace global E402 ignore with inline noqa on 5 specific lines ([7ad9fa2](https://github.com/failed33/paraview-mcp/commit/7ad9fa2380601c487f370bcc48ba16652dbaa478))
