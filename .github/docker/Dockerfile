@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -56,7 +56,7 @@ RUN cmake -S /src/paraview -B . \
     && cmake --install .
 
 # Stage 3: Runtime SDK image
-FROM ubuntu:22.04 AS runtime
+FROM ubuntu:24.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
