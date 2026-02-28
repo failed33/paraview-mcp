@@ -57,3 +57,5 @@ jobs:
         run: cmake --build --preset dev
       - name: Test
         run: ctest --preset default
+        env:
+          QT_QPA_PLATFORM: offscreen
