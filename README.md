@@ -16,7 +16,7 @@ Connect [ParaView](https://www.paraview.org/) to AI assistants through the [Mode
 ## Prerequisites
 
 - [ParaView 6.0.1](https://www.paraview.org/download/) with the MCP plugin loaded (see [Plugin Setup](#set-up-the-paraview-plugin))
-- [Python](https://www.python.org/) >= 3.11
+- [Python](https://www.python.org/) >= 3.13
 - [uv](https://docs.astral.sh/uv/) (recommended) or pip
 
 ## Quick Start
@@ -45,12 +45,14 @@ pip install paraview-mcp-server
 
 ## Set Up the ParaView Plugin
 
-The plugin must be built from source against your ParaView 6.0.1 SDK. See [CONTRIBUTING.md](CONTRIBUTING.md) for full build instructions.
+Download a pre-built plugin binary from the [latest GitHub Release](https://github.com/failed33/paraview-mcp/releases/latest) for your platform (Linux x86_64 or macOS arm64). Extract the archive and follow the included `INSTALL.md`.
 
-Once built:
+Alternatively, build the plugin from source against your ParaView 6.0.1 SDK. See [CONTRIBUTING.md](CONTRIBUTING.md) for full build instructions.
+
+Once installed:
 
 1. Open **Tools > Manage Plugins** in ParaView.
-2. Load the plugin library from `dist/lib/paraview-6.0/plugins/ParaViewMCP/`.
+2. Click **Load New...** and select `ParaViewMCP.so` from the plugin directory.
 3. Enable **Auto Load**.
 4. Open **Tools > ParaView MCP**.
 5. Click **Start Server**.

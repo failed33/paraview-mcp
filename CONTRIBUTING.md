@@ -7,7 +7,7 @@ Thank you for your interest in contributing to ParaView MCP!
 - [ParaView 6.0.1](https://www.paraview.org/download/) SDK (for plugin development)
 - [CMake](https://cmake.org/) 3.24+
 - [Ninja](https://ninja-build.org/) build system
-- [Python](https://www.python.org/) 3.11+
+- [Python](https://www.python.org/) 3.13+
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - [pre-commit](https://pre-commit.com/)
 - [Node.js](https://nodejs.org/) (for commitlint)

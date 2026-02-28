@@ -31,7 +31,7 @@ paraview
 2. Click **Start Server** in the dock widget.
 3. Connect your MCP client:
    ```bash
-   uvx paraview-mcp
+   uvx paraview-mcp-server
    ```
 
 See <https://github.com/failed33/paraview-mcp> for full documentation.

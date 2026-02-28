@@ -6,14 +6,28 @@ It expects the ParaView-side C++ plugin to be loaded and listening first.
 
 ## Requirements
 
-- Python `>=3.11`
-- `mcp[cli]>=1.3.0`
+- Python `>=3.13`
+- `mcp[cli]>=1.26.0,<2`
 
 ## Install
 
+Run without installing (recommended):
+
 ```bash
-cd /Users/mnkirsch/Coding/temp/mcp/paraview-mcp/Wrapping/Python/MCPServer
-pip install -e .
+uvx paraview-mcp-server
+```
+
+Or install from PyPI:
+
+```bash
+pip install paraview-mcp-server
+```
+
+For development, install in editable mode from the repository:
+
+```bash
+cd Wrapping/Python/MCPServer
+uv sync
 ```
 
 ## Environment Optional Configurations
@@ -41,6 +55,5 @@ The public MCP tools remain:
 ## Run
 
 ```bash
-cd /Users/mnkirsch/Coding/temp/mcp/paraview-mcp/Wrapping/Python/MCPServer
 paraview-mcp-server
 ```
