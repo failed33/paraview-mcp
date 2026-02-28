@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "packages": {
+    ".": {
+      "package-name": "ParaViewMCP",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "CMakeLists.txt"
+        },
+        {
+          "type": "generic",
+          "path": "Wrapping/Python/MCPServer/pyproject.toml"
+        },
+        {
+          "type": "generic",
+          "path": "Wrapping/Python/MCPServer/src/paraview_mcp/__init__.py"
+        },
+        {
+          "type": "generic",
+          "path": "Plugins/ParaViewMCP/CMakeLists.txt"
+        }
+      ]
+    }
+  }
+}

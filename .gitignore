@@ -21,3 +21,4 @@ compile_commands.json
 __pycache__/
 *.pyc
 *.egg-info/
+node_modules/

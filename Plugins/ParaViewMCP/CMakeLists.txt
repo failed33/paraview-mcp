@@ -112,7 +112,7 @@ paraview_mcp_configure_target(ParaViewMCPBridgeCore)
 paraview_add_plugin(
   ParaViewMCP
   REQUIRED_ON_CLIENT
-  VERSION "0.1.0"
+  VERSION "0.1.0" # x-release-please-version
   UI_INTERFACES ${paraview_mcp_ui_interfaces}
   SOURCES
     ${paraview_mcp_plugin_sources}
