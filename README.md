@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/paraview-mcp-server)](https://pypi.org/project/paraview-mcp-server/)
+[![CodeQL](https://github.com/failed33/paraview-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/failed33/paraview-mcp/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/failed33/paraview-mcp/graph/badge.svg?token=imlWhPGAgh)](https://codecov.io/gh/failed33/paraview-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Connect [ParaView](https://www.paraview.org/) to AI assistants through the [Model Context Protocol](https://modelcontextprotocol.io/).
