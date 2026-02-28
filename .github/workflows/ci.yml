@@ -46,6 +46,8 @@ jobs:
     container: ghcr.io/${{ github.repository }}-ci:6.0.1
     steps:
       - uses: actions/checkout@v4
+      - name: Install CMake 3.24+
+        run: pip3 install cmake
       - name: Configure
         run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
       - name: Build
