@@ -32,6 +32,49 @@ cd Wrapping/Python/MCPServer
 uv sync
 ```
 
+## Building the Plugin
+
+Build against your ParaView 6.0.1 development install:
+
+```bash
+cmake -S . -B build -GNinja \
+  -DParaView_DIR=/path/to/paraview-6.0/lib/cmake/paraview-6.0 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=dist
+
+cmake --build build
+cmake --install build
+```
+
+Or use the CMake presets:
+
+```bash
+cmake --preset dev -DParaView_DIR=/path/to/paraview-6.0/lib/cmake/paraview-6.0
+cmake --build --preset dev
+```
+
+### Developer Tooling
+
+- `compile_commands.json` is generated automatically
+- `cmake --build build --target format-cpp` — format C++ source
+- `cmake --build build --target format-cpp-check` — check formatting without modifying
+- `cmake --build build --target lint-cpp` — run clang-tidy lints
+
+### Optional Configure Flags
+
+- `-DPARAVIEW_MCP_ENABLE_CLANG_TIDY=ON` — run clang-tidy during compilation
+- `-DPARAVIEW_MCP_ENABLE_WARNINGS=OFF` — suppress the extra warning profile
+
+### Loading the Plugin
+
+1. Open **Tools > Manage Plugins** in ParaView.
+2. Load the plugin library from `dist/lib/paraview-6.0/plugins/ParaViewMCP/`.
+3. Enable **Auto Load**.
+4. Open **Tools > ParaView MCP**.
+5. Click **Start Server**.
+
+The dock never auto-starts the bridge. Non-loopback binds require an auth token.
+
 ## Commit Conventions
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/).
@@ -74,8 +117,22 @@ Pre-commit hooks enforce all formatting automatically.
 
 ## Testing
 
-- **C++ tests:** `ctest --preset default`
-- **Python tests:** `cd Wrapping/Python/MCPServer && uv run pytest`
+### C++ Tests
+
+Run the unit and headless integration suites:
+
+```bash
+ctest --preset default
+```
+
+### Python Tests
+
+```bash
+cd Wrapping/Python/MCPServer
+uv run pytest
+```
+
+The socket-based tests use loopback TCP and will self-skip in sandboxed environments that forbid local binds.
 
 All new features and bug fixes should include tests.
 
