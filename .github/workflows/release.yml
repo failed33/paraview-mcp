@@ -95,7 +95,7 @@ jobs:
           echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: plugin-linux-x86_64
           path: ${{ env.ARCHIVE_NAME }}
@@ -181,7 +181,7 @@ jobs:
           echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: plugin-macos-arm64
           path: ${{ env.ARCHIVE_NAME }}
