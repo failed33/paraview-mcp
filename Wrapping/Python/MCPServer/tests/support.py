@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import sys
 import types
 
@@ -18,7 +19,14 @@ def install_fastmcp_stub() -> None:
     class _Image:
         def __init__(self, data: bytes, format: str) -> None:
             self.data = data
-            self.format = format
+            self._format = format
+
+        def to_image_content(self):
+            return types.SimpleNamespace(
+                type="image",
+                data=base64.b64encode(self.data).decode("ascii"),
+                mimeType=f"image/{self._format.lower()}",
+            )
 
     class _FastMCP:
         def __init__(self, *_args: object, **_kwargs: object) -> None:

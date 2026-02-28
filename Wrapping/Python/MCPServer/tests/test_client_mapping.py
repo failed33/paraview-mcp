@@ -60,8 +60,10 @@ class ClientMappingTests(unittest.TestCase):
             connection.calls,
             [("capture_screenshot", {"width": 320, "height": 200})],
         )
-        self.assertEqual(image.format, "png")
         self.assertEqual(image.data, b"fake-image")
+        image_content = image.to_image_content()
+        self.assertEqual(image_content.mimeType, "image/png")
+        self.assertEqual(image_content.data, base64.b64encode(b"fake-image").decode("ascii"))
 
     def test_get_screenshot_rejects_missing_image_bytes(self) -> None:
         class BrokenConnection(RecordingConnection):
