@@ -243,14 +243,28 @@ def _to_pretty_json(payload: dict[str, Any]) -> str:
 
 
 @mcp.tool()
-def execute_paraview_code(ctx: Context, code: str) -> str:
-    """
-    Execute Python code inside the active ParaView session.
+def execute_paraview_code(ctx: Context, code: str) -> dict[str, object]:
+    """Execute Python code in ParaView. Break complex tasks into small steps.
 
-    The bridge keeps a persistent namespace for the current client connection.
+    The session namespace persists across calls so variables survive between
+    invocations.  Use ``print()`` to inspect values.
     """
-    result = get_paraview_connection().send_command("execute_python", {"code": code})
-    return _to_pretty_json(result)
+    try:
+        result = get_paraview_connection().send_command("execute_python", {"code": code})
+    except ParaViewCommandError as exc:
+        msg = str(exc)
+        if exc.traceback_text:
+            msg += f"\n{exc.traceback_text}"
+        return {"success": False, "message": msg}
+
+    error = result.get("error")
+    if error:
+        tb = result.get("traceback")
+        msg = f"{error}\n{tb}" if tb else error
+        return {"success": False, "message": msg}
+
+    stdout = (result.get("stdout") or "").rstrip()
+    return {"success": True, "message": stdout}
 
 
 @mcp.tool()

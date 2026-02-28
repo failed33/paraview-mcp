@@ -45,7 +45,7 @@ class ClientMappingTests(unittest.TestCase):
             payload = execute_paraview_code(None, "print(42)")
 
         self.assertEqual(connection.calls, [("execute_python", {"code": "print(42)"})])
-        self.assertEqual(json.loads(payload)["stdout"], "42\n")
+        self.assertEqual(payload, {"success": True, "message": "42"})
 
     def test_get_pipeline_info_maps_to_inspect_pipeline(self) -> None:
         connection = RecordingConnection()
