@@ -1,5 +1,10 @@
 .venv/
-docs/plans/
+.build/
+.build-ninja/
+build/
+.dist/
+dist/
+compile_commands.json
 .pytest_cache/
 .coverage
 .coverage.*
@@ -14,4 +19,5 @@ docs/plans/
 .env
 .env.local
 __pycache__/
+*.pyc
 *.egg-info/

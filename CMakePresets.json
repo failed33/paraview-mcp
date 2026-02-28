@@ -1,0 +1,218 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default (Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "ParaView_DIR": "$env{ParaView_DIR}",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": {
+        "PATH": "/opt/homebrew/opt/llvm/bin:$penv{PATH}"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Development (tests + clang-tidy)",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "PARAVIEW_MCP_ENABLE_CLANG_TIDY": "ON"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "AddressSanitizer",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=address"
+      },
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=1:halt_on_error=0"
+      }
+    },
+    {
+      "name": "ubsan",
+      "displayName": "UndefinedBehaviorSanitizer",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=undefined",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=undefined"
+      },
+      "environment": {
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=0"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Code coverage (llvm-cov)",
+      "inherits": "default",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping",
+        "CMAKE_EXE_LINKER_FLAGS": "-fprofile-instr-generate",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fprofile-instr-generate"
+      }
+    },
+    {
+      "name": "iwyu",
+      "displayName": "Include-what-you-use",
+      "inherits": "default",
+      "cacheVariables": {
+        "PARAVIEW_MCP_ENABLE_IWYU": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "ubsan",
+      "configurePreset": "ubsan"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "iwyu",
+      "configurePreset": "iwyu"
+    },
+    {
+      "name": "lint",
+      "displayName": "Run clang-tidy",
+      "configurePreset": "default",
+      "targets": [
+        "lint-cpp"
+      ]
+    },
+    {
+      "name": "lint-fix",
+      "displayName": "Run clang-tidy --fix",
+      "configurePreset": "default",
+      "targets": [
+        "lint-cpp-fix"
+      ]
+    },
+    {
+      "name": "format",
+      "displayName": "Fix formatting (clang-format)",
+      "configurePreset": "default",
+      "targets": [
+        "format-cpp"
+      ]
+    },
+    {
+      "name": "format-check",
+      "displayName": "Check formatting (clang-format)",
+      "configurePreset": "default",
+      "targets": [
+        "format-cpp-check"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan",
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=1:halt_on_error=0"
+      }
+    },
+    {
+      "name": "ubsan",
+      "configurePreset": "ubsan",
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=0"
+      }
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "ci",
+      "displayName": "Full CI pipeline",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "default"
+        },
+        {
+          "type": "build",
+          "name": "format-check"
+        },
+        {
+          "type": "build",
+          "name": "default"
+        },
+        {
+          "type": "test",
+          "name": "default"
+        }
+      ]
+    },
+    {
+      "name": "ci-sanitizers",
+      "displayName": "CI with sanitizers",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "asan"
+        },
+        {
+          "type": "build",
+          "name": "asan"
+        },
+        {
+          "type": "test",
+          "name": "asan"
+        }
+      ]
+    }
+  ]
+}

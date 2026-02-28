@@ -1,0 +1,21 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -modernize-pass-by-value,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-avoid-const-params-in-decls
+HeaderFilterRegex: '(^|.*/)Plugins/.*'
+FormatStyle: file
+CheckOptions:
+  - key: readability-function-size.LineThreshold
+    value: '150'
+  - key: readability-function-size.StatementThreshold
+    value: '80'

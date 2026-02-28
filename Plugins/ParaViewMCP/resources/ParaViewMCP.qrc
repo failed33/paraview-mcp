@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/ParaViewMCP">
+    <file alias="mcp-icon.png">mcp-icon.png</file>
+  </qresource>
+</RCC>
