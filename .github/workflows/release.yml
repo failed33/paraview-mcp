@@ -54,11 +54,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    container: kitware/paraview_org-plugin-devel:6.0.1
+    container: ghcr.io/${{ github.repository }}-ci:6.0.1
     env:
-      PARAVIEW_PREFIX: /builds/gitlab-kitware-sciviz-ci/build/install
       TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
     steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-pip qttools5-dev git
+          pip3 install cmake==3.31.4
+
       - name: Checkout source
         run: |
           git clone --depth 1 --branch "$TAG_NAME" \
@@ -66,21 +71,19 @@ jobs:
 
       - name: Configure
         run: |
-          mkdir build
-          scl enable gcc-toolset-10 -- cmake \
+          cmake \
             -S source \
             -B build \
-            -G "Unix Makefiles" \
-            -DCMAKE_PREFIX_PATH=${{ env.PARAVIEW_PREFIX }} \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=$PWD/install \
+            -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0 \
             -DBUILD_TESTING=OFF
 
       - name: Build
-        run: scl enable gcc-toolset-10 -- cmake --build build --parallel $(nproc)
+        run: cmake --build build --parallel $(nproc)
 
       - name: Install
-        run: scl enable gcc-toolset-10 -- cmake --install build
+        run: cmake --install build
 
       - name: Package tarball
         run: |
