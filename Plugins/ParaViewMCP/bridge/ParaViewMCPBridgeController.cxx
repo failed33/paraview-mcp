@@ -31,14 +31,6 @@ void ParaViewMCPBridgeController::initialize()
 
   this->Initialized = true;
   this->Config = ParaViewMCPServerConfig::load();
-
-  QString pythonError;
-  this->PythonBridge.initialize(&pythonError);
-  if (!pythonError.isEmpty())
-  {
-    this->setLog(pythonError);
-  }
-
   this->setStatus(QStringLiteral("Stopped"));
 }
 
