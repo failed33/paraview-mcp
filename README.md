@@ -1,6 +1,6 @@
 # ParaView MCP
 
-[![CI](https://github.com/<org>/paraview-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/<org>/paraview-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/paraview-mcp)](https://pypi.org/project/paraview-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

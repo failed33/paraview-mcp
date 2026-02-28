@@ -10,8 +10,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please report security concerns by emailing **security@example.com**
-(replace with your actual contact before publishing).
+Instead, please use [GitHub's private vulnerability reporting](https://github.com/failed33/paraview-mcp/security/advisories/new) to submit a security advisory.
 
 ### What to include
 

@@ -16,7 +16,7 @@ Thank you for your interest in contributing to ParaView MCP!
 
 ```bash
 # Clone
-git clone https://github.com/<org>/paraview-mcp.git
+git clone https://github.com/failed33/paraview-mcp.git
 cd paraview-mcp
 
 # Install pre-commit hooks
