@@ -1,0 +1,2 @@
+project_includes = ["Wrapping/Python/MCPServer/src/**/*.py"]
+search_path = ["Wrapping/Python/MCPServer/src", "Wrapping/Python/MCPServer/tests"]
