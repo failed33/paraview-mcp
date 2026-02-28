@@ -38,3 +38,69 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@v1.13.0
         with:
           packages-dir: Wrapping/Python/MCPServer/dist
+
+  build-plugin-binary:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    container: kitware/paraview_org-plugin-devel:6.0.1
+    env:
+      PARAVIEW_PREFIX: /builds/gitlab-kitware-sciviz-ci/build/install
+    steps:
+      - name: Checkout source
+        run: |
+          git clone --depth 1 --branch ${{ needs.release-please.outputs.tag_name }} \
+            https://github.com/${{ github.repository }}.git source
+
+      - name: Configure
+        run: |
+          mkdir build
+          scl enable gcc-toolset-10 -- cmake \
+            -S source \
+            -B build \
+            -G "Unix Makefiles" \
+            -DCMAKE_PREFIX_PATH=${{ env.PARAVIEW_PREFIX }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$PWD/install \
+            -DBUILD_TESTING=OFF
+
+      - name: Build
+        run: scl enable gcc-toolset-10 -- cmake --build build --parallel $(nproc)
+
+      - name: Install
+        run: scl enable gcc-toolset-10 -- cmake --install build
+
+      - name: Package tarball
+        run: |
+          VERSION="${{ needs.release-please.outputs.tag_name }}"
+          VERSION="${VERSION#v}"
+          ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-linux-x86_64"
+          mkdir -p "${ARCHIVE_DIR}"
+          cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
+          cp source/LICENSE "${ARCHIVE_DIR}/"
+          cp source/.github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
+          tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
+          echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-binary
+          path: ${{ env.ARCHIVE_NAME }}
+          if-no-files-found: error
+
+  upload-plugin-binary:
+    needs: [release-please, build-plugin-binary]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-binary
+
+      - name: Upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ needs.release-please.outputs.tag_name }} *.tar.gz --repo ${{ github.repository }}
