@@ -34,6 +34,6 @@ jobs:
           python-version: "3.13"
       - name: Build package
         run: cd Wrapping/Python/MCPServer && uv build
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           packages-dir: Wrapping/Python/MCPServer/dist
