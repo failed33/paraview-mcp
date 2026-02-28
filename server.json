@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.failed33/paraview-mcp",
+  "description": "ParaView integration through the Model Context Protocol. Control ParaView visualizations, execute Python code, inspect pipelines, and capture screenshots via MCP tools.",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/failed33/paraview-mcp"
+  },
+  "tools": [
+    {
+      "name": "execute_paraview_code",
+      "description": "Execute Python code inside ParaView's embedded interpreter"
+    },
+    {
+      "name": "get_pipeline_info",
+      "description": "Inspect the current ParaView visualization pipeline"
+    },
+    {
+      "name": "get_screenshot",
+      "description": "Capture a screenshot of the active ParaView render view"
+    }
+  ]
+}
