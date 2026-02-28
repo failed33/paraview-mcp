@@ -15,7 +15,11 @@ from support import install_fastmcp_stub
 
 install_fastmcp_stub()
 
-from paraview_mcp.server import execute_paraview_code, get_pipeline_info, get_screenshot
+from paraview_mcp.server import (  # noqa: E402
+    execute_paraview_code,
+    get_pipeline_info,
+    get_screenshot,
+)
 
 
 class RecordingConnection:

@@ -15,7 +15,7 @@ from support import install_fastmcp_stub
 
 install_fastmcp_stub()
 
-import paraview_mcp.server as server_module
+import paraview_mcp.server as server_module  # noqa: E402
 
 
 class RuntimeConnection:

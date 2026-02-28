@@ -17,9 +17,9 @@ from support import install_fastmcp_stub
 
 install_fastmcp_stub()
 
-import paraview_mcp.server as server_module
-from paraview_mcp.protocol import encode_message, recv_message
-from paraview_mcp.server import ParaViewCommandError, ParaViewConnection
+import paraview_mcp.server as server_module  # noqa: E402
+from paraview_mcp.protocol import encode_message, recv_message  # noqa: E402
+from paraview_mcp.server import ParaViewCommandError, ParaViewConnection  # noqa: E402
 
 
 class BridgeStubServer:
