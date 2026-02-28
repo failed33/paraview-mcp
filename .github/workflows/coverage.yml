@@ -50,7 +50,7 @@ jobs:
       - name: Install build dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends python3-pip qttools5-dev lcov git curl gpg
+          apt-get install -y --no-install-recommends python3-pip qt6-tools-dev lcov git curl gpg
           pip3 install cmake==3.31.4
       - name: Configure
         run: |

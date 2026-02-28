@@ -46,7 +46,7 @@ jobs:
           packages-dir: Wrapping/Python/MCPServer/dist
 
   # ---------------------------------------------------------------------------
-  # Linux x86_64 — built inside Kitware's binary-compatible container
+  # Linux x86_64 — built inside the project CI container (Qt6)
   # ---------------------------------------------------------------------------
   build-plugin-linux:
     needs: release-please
@@ -61,7 +61,7 @@ jobs:
       - name: Install build dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends python3-pip qttools5-dev git
+          apt-get install -y --no-install-recommends python3-pip qt6-tools-dev git
           pip3 install cmake==3.31.4
 
       - name: Checkout source
@@ -121,14 +121,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install dependencies
-        run: brew install cmake ninja qt@5
+        run: brew install cmake ninja qt@6
 
       - name: Cache ParaView SDK
         id: cache-paraview
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt5
+          key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt6
 
       - name: Build ParaView SDK
         if: steps.cache-paraview.outputs.cache-hit != 'true'
@@ -150,7 +150,7 @@ jobs:
             -DPARAVIEW_ENABLE_WEB=OFF \
             -DPARAVIEW_ENABLE_EXAMPLES=OFF \
             -DVTK_WRAP_PYTHON=ON \
-            -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)"
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
           cmake --build /tmp/paraview-build --parallel $(sysctl -n hw.ncpu)
           cmake --install /tmp/paraview-build
 
@@ -160,7 +160,7 @@ jobs:
             -S . \
             -B build \
             -G Ninja \
-            -DCMAKE_PREFIX_PATH="/tmp/paraview-sdk;$(brew --prefix qt@5)" \
+            -DCMAKE_PREFIX_PATH="/tmp/paraview-sdk;$(brew --prefix qt@6)" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=$PWD/install \
             -DBUILD_TESTING=OFF

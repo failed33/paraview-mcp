@@ -20,13 +20,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxt-dev \
     libxkbcommon-dev \
     libxcb-xkb-dev \
-    qtbase5-dev \
-    qttools5-dev \
-    qttools5-dev-tools \
-    qtxmlpatterns5-dev-tools \
-    libqt5svg5-dev \
-    libqt5x11extras5-dev \
-    libqt5opengl5-dev \
+    qt6-base-dev \
+    qt6-tools-dev \
+    qt6-tools-dev-tools \
+    libqt6svg6-dev \
+    libqt6opengl6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Stage 2: Build ParaView from source
@@ -71,11 +69,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxt6 \
     libxext6 \
     python3-pip \
-    qtbase5-dev \
-    qttools5-dev \
-    libqt5svg5-dev \
-    libqt5x11extras5-dev \
-    libqt5opengl5-dev \
+    qt6-base-dev \
+    qt6-tools-dev \
+    libqt6svg6-dev \
+    libqt6opengl6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/paraview /opt/paraview
