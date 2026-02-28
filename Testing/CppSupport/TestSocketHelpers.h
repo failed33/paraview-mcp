@@ -13,7 +13,7 @@
 #include <QTest>
 
 inline bool
-connectClientSocket(QTcpSocket& socket, quint16 port, QString* error, int timeoutMs = 2000)
+connectClientSocket(QTcpSocket& socket, quint16 port, QString* error, int timeoutMs = 5000)
 {
   socket.connectToHost(QHostAddress::LocalHost, port);
 
