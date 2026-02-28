@@ -50,29 +50,26 @@ jobs:
       - name: Install build dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends python3-pip qttools5-dev llvm
+          apt-get install -y --no-install-recommends python3-pip qttools5-dev lcov
           pip3 install cmake==3.31.4
-      - name: Configure (coverage preset)
-        run: cmake --preset coverage -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
+      - name: Configure
+        run: |
+          cmake --preset dev \
+            -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0 \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="--coverage" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
       - name: Build
-        run: cmake --build --preset coverage
+        run: cmake --build --preset dev
       - name: Run tests
-        run: ctest --preset coverage
+        run: ctest --preset default
         env:
           QT_QPA_PLATFORM: offscreen
-          LLVM_PROFILE_FILE: "build/%p.profraw"
       - name: Generate lcov report
         run: |
-          llvm-profdata merge -sparse build/*.profraw -o build/coverage.profdata
-          TEST_BIN=$(find build -type f -perm /111 -path "*/Testing/*" | head -1)
-          OBJECT_ARGS=$(find build -type f -perm /111 -path "*/Testing/*" | tail -n +2 | sed 's/^/-object /' | tr '\n' ' ')
-          llvm-cov export \
-            --format=lcov \
-            --instr-profile=build/coverage.profdata \
-            $TEST_BIN \
-            $OBJECT_ARGS \
-            --ignore-filename-regex="(Testing/|ThirdParty/|/opt/|/usr/)" \
-            > build/cpp_coverage.lcov
+          lcov --capture --directory build --output-file build/coverage.info --no-external
+          lcov --remove build/coverage.info '*/Testing/*' '*/ThirdParty/*' --output-file build/cpp_coverage.lcov
       - name: Upload C++ coverage
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
