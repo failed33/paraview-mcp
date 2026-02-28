@@ -70,7 +70,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxkbcommon0 \
     libxt6 \
     libxext6 \
+    python3-pip \
     qtbase5-dev \
+    qttools5-dev \
     libqt5svg5-dev \
     libqt5x11extras5-dev \
     libqt5opengl5-dev \

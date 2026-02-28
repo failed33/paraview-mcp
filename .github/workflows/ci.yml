@@ -46,10 +46,10 @@ jobs:
     container: ghcr.io/${{ github.repository }}-ci:6.0.1
     steps:
       - uses: actions/checkout@v4
-      - name: Install CMake 3.24+
+      - name: Install build dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends python3-pip
+          apt-get install -y --no-install-recommends python3-pip qttools5-dev
           pip3 install cmake
       - name: Configure
         run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
