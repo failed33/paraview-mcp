@@ -42,5 +42,5 @@ The public MCP tools remain:
 
 ```bash
 cd /Users/mnkirsch/Coding/temp/mcp/paraview-mcp/Wrapping/Python/MCPServer
-paraview-mcp
+paraview-mcp-server
 ```

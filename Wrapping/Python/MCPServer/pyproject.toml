@@ -1,5 +1,5 @@
 [project]
-name = "paraview-mcp"
+name = "paraview-mcp-server"
 version = "0.1.1" # x-release-please-version
 description = "ParaView integration through the Model Context Protocol"
 readme = "README.md"
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-paraview-mcp = "paraview_mcp.server:main"
+paraview-mcp-server = "paraview_mcp.server:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

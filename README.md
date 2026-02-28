@@ -1,12 +1,12 @@
 # ParaView MCP
 
 [![CI](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/paraview-mcp)](https://pypi.org/project/paraview-mcp/)
+[![PyPI](https://img.shields.io/pypi/v/paraview-mcp-server)](https://pypi.org/project/paraview-mcp-server/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Connect [ParaView](https://www.paraview.org/) to AI assistants through the [Model Context Protocol](https://modelcontextprotocol.io/).
 
-`paraview-mcp` has two runtime parts:
+`paraview-mcp-server` has two runtime parts:
 
 - a **ParaView plugin** (C++/Qt) that exposes a TCP bridge inside the ParaView GUI
 - a **Python MCP server** that connects to the plugin and serves tools to any MCP client
@@ -22,7 +22,7 @@ Connect [ParaView](https://www.paraview.org/) to AI assistants through the [Mode
 Add to Claude Code in one command:
 
 ```bash
-claude mcp add paraview -- uvx paraview-mcp
+claude mcp add paraview -- uvx paraview-mcp-server
 ```
 
 Then [set up the ParaView plugin](#set-up-the-paraview-plugin) and you're ready to go.
@@ -32,13 +32,13 @@ Then [set up the ParaView plugin](#set-up-the-paraview-plugin) and you're ready 
 Run without installing (recommended):
 
 ```bash
-uvx paraview-mcp
+uvx paraview-mcp-server
 ```
 
 Or install from PyPI:
 
 ```bash
-pip install paraview-mcp
+pip install paraview-mcp-server
 ```
 
 ## Set Up the ParaView Plugin
@@ -60,7 +60,7 @@ The dock widget shows the connection status. Non-loopback binds require an auth 
 ### Claude Code (CLI)
 
 ```bash
-claude mcp add paraview -- uvx paraview-mcp
+claude mcp add paraview -- uvx paraview-mcp-server
 ```
 
 ### Claude Desktop
@@ -72,7 +72,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "paraview": {
       "command": "uvx",
-      "args": ["paraview-mcp"]
+      "args": ["paraview-mcp-server"]
     }
   }
 }
@@ -87,7 +87,7 @@ Add to `.cursor/mcp.json` in your project root:
   "mcpServers": {
     "paraview": {
       "command": "uvx",
-      "args": ["paraview-mcp"]
+      "args": ["paraview-mcp-server"]
     }
   }
 }
@@ -110,7 +110,7 @@ Defaults work for a standard local setup. Override these when connecting to Para
   "mcpServers": {
     "paraview": {
       "command": "uvx",
-      "args": ["paraview-mcp"],
+      "args": ["paraview-mcp-server"],
       "env": {
         "PARAVIEW_HOST": "192.168.1.10",
         "PARAVIEW_PORT": "9877",
