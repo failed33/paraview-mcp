@@ -39,7 +39,10 @@ jobs:
         with:
           packages-dir: Wrapping/Python/MCPServer/dist
 
-  build-plugin-binary:
+  # ---------------------------------------------------------------------------
+  # Linux x86_64 — built inside Kitware's binary-compatible container
+  # ---------------------------------------------------------------------------
+  build-plugin-linux:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
@@ -77,6 +80,7 @@ jobs:
           ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-linux-x86_64"
           mkdir -p "${ARCHIVE_DIR}"
           cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
+          cp install/lib/paraview-6.0/plugins/ParaViewMCP.plugins.xml "${ARCHIVE_DIR}/"
           cp source/LICENSE "${ARCHIVE_DIR}/"
           cp source/.github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
           tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
@@ -85,20 +89,107 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-binary
+          name: plugin-linux-x86_64
           path: ${{ env.ARCHIVE_NAME }}
           if-no-files-found: error
 
-  upload-plugin-binary:
-    needs: [release-please, build-plugin-binary]
+  # ---------------------------------------------------------------------------
+  # macOS arm64 — native build on Apple Silicon runner
+  # ---------------------------------------------------------------------------
+  build-plugin-macos:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: macos-14
+    env:
+      PARAVIEW_VERSION: v6.0.1
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: brew install cmake ninja qt@5
+
+      - name: Cache ParaView SDK
+        id: cache-paraview
+        uses: actions/cache@v4
+        with:
+          path: /tmp/paraview-sdk
+          key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt5
+
+      - name: Build ParaView SDK
+        if: steps.cache-paraview.outputs.cache-hit != 'true'
+        run: |
+          git clone --recursive --branch ${{ env.PARAVIEW_VERSION }} --depth 1 \
+            https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src
+          cmake \
+            -S /tmp/paraview-src \
+            -B /tmp/paraview-build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/tmp/paraview-sdk \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_TESTING=OFF \
+            -DPARAVIEW_BUILD_QT_GUI=ON \
+            -DPARAVIEW_USE_QT=ON \
+            -DPARAVIEW_ENABLE_PYTHON=ON \
+            -DPARAVIEW_USE_MPI=OFF \
+            -DPARAVIEW_ENABLE_WEB=OFF \
+            -DPARAVIEW_ENABLE_EXAMPLES=OFF \
+            -DVTK_WRAP_PYTHON=ON \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)"
+          cmake --build /tmp/paraview-build --parallel $(sysctl -n hw.ncpu)
+          cmake --install /tmp/paraview-build
+
+      - name: Configure
+        run: |
+          cmake \
+            -S . \
+            -B build \
+            -G Ninja \
+            -DCMAKE_PREFIX_PATH="/tmp/paraview-sdk;$(brew --prefix qt@5)" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$PWD/install \
+            -DBUILD_TESTING=OFF
+
+      - name: Build
+        run: cmake --build build --parallel $(sysctl -n hw.ncpu)
+
+      - name: Install
+        run: cmake --install build
+
+      - name: Package tarball
+        run: |
+          VERSION="${{ needs.release-please.outputs.tag_name }}"
+          VERSION="${VERSION#v}"
+          ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-macos-arm64"
+          mkdir -p "${ARCHIVE_DIR}"
+          cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
+          cp install/lib/paraview-6.0/plugins/ParaViewMCP.plugins.xml "${ARCHIVE_DIR}/"
+          cp LICENSE "${ARCHIVE_DIR}/"
+          cp .github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
+          tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
+          echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-macos-arm64
+          path: ${{ env.ARCHIVE_NAME }}
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Upload all platform binaries to the GitHub Release
+  # ---------------------------------------------------------------------------
+  upload-plugin-binaries:
+    needs: [release-please, build-plugin-linux, build-plugin-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: plugin-binary
+          pattern: plugin-*
+          merge-multiple: true
 
       - name: Upload to GitHub Release
         env:
