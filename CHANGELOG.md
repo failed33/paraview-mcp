@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.4...ParaViewMCP-v0.1.5) (2026-03-01)
+
+
+### Bug Fixes
+
+* regenerate Qt6 QFlags patch and exclude patches from formatting ([5cfe196](https://github.com/failed33/paraview-mcp/commit/5cfe1962b1eda485fddf033d04d3a902be3bd54c))
+* use patch instead of git apply for Qt6 QFlags patch and shorten MCP description ([bd04dbe](https://github.com/failed33/paraview-mcp/commit/bd04dbe68a38c706eaf4b20b5093bfd798f00c15))
+
 ## [0.1.4](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.3...ParaViewMCP-v0.1.4) (2026-03-01)
 
 
