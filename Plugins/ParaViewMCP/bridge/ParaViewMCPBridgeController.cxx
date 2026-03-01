@@ -1,6 +1,6 @@
 #include "ParaViewMCPBridgeController.h"
 
-#include "ParaViewMCPDockWindow.h"
+#include "ParaViewMCPPopup.h"
 
 ParaViewMCPBridgeController& ParaViewMCPBridgeController::instance()
 {
@@ -46,21 +46,18 @@ void ParaViewMCPBridgeController::shutdown()
   this->Initialized = false;
 }
 
-void ParaViewMCPBridgeController::registerDockWindow(ParaViewMCPDockWindow* dockWindow)
+void ParaViewMCPBridgeController::registerPopup(ParaViewMCPPopup* popup)
 {
-  this->DockWindow = dockWindow;
+  this->Popup = popup;
 }
 
-void ParaViewMCPBridgeController::showDockWindow()
+void ParaViewMCPBridgeController::showPopup(QWidget* anchor)
 {
-  if (!this->DockWindow)
+  if (!this->Popup)
   {
     return;
   }
-
-  this->DockWindow->show();
-  this->DockWindow->raise();
-  this->DockWindow->activateWindow();
+  this->Popup->showRelativeTo(anchor);
 }
 
 bool ParaViewMCPBridgeController::startServer(const QString& host,
@@ -126,8 +123,43 @@ QString ParaViewMCPBridgeController::lastLog() const
   return this->LastLog;
 }
 
+ParaViewMCPBridgeController::ServerState ParaViewMCPBridgeController::serverState() const
+{
+  return this->CurrentState;
+}
+
+void ParaViewMCPBridgeController::updateServerState()
+{
+  ServerState newState = ServerState::Stopped;
+  if (this->SocketBridge.hasClient())
+  {
+    newState = ServerState::Connected;
+  }
+  else if (this->SocketBridge.isListening())
+  {
+    newState = ServerState::Listening;
+  }
+  if (newState != this->CurrentState)
+  {
+    this->CurrentState = newState;
+    emit this->serverStateChanged(newState);
+  }
+}
+
 void ParaViewMCPBridgeController::setStatus(const QString& status)
 {
+  if (status == QStringLiteral("Error"))
+  {
+    if (this->CurrentState != ServerState::Error)
+    {
+      this->CurrentState = ServerState::Error;
+      emit this->serverStateChanged(ServerState::Error);
+    }
+  }
+  else
+  {
+    this->updateServerState();
+  }
   this->LastStatus = status;
   emit this->statusChanged(status);
 }
