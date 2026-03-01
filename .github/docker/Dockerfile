@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qt6-5compat-dev \
     libqt6svg6-dev \
     libqt6opengl6-dev \
+    xsltproc \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
