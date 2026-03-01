@@ -15,6 +15,7 @@ public:
     bool ResetSession = false;
     bool HandshakeCompleted = false;
     QString LogMessage;
+    QString HistoryJson;
   };
 
   explicit ParaViewMCPRequestHandler(IParaViewMCPPythonBridge& pythonBridge);

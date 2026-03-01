@@ -4,6 +4,7 @@
 #include "ParaViewMCPProtocol.h"
 
 #include <QJsonArray>
+#include <QJsonDocument>
 
 namespace
 {
@@ -149,7 +150,15 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
         errorText.isEmpty() ? QStringLiteral("Python execution failed") : errorText);
     }
 
-    return ParaViewMCPRequestHandler::success(requestId, result);
+    Result handlerResult = ParaViewMCPRequestHandler::success(requestId, result);
+
+    QJsonArray historyArray;
+    if (this->PythonBridge.getHistory(&historyArray, nullptr))
+    {
+      handlerResult.HistoryJson =
+        QString::fromUtf8(QJsonDocument(historyArray).toJson(QJsonDocument::Compact));
+    }
+    return handlerResult;
   }
 
   if (type == QStringLiteral("inspect_pipeline"))
@@ -179,6 +188,49 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
         requestId,
         QStringLiteral("SCREENSHOT_ERROR"),
         errorText.isEmpty() ? QStringLiteral("Unable to capture a screenshot") : errorText);
+    }
+
+    return ParaViewMCPRequestHandler::success(requestId, result);
+  }
+
+  if (type == QStringLiteral("get_history"))
+  {
+    QJsonArray historyArray;
+    QString errorText;
+    if (!this->PythonBridge.getHistory(&historyArray, &errorText))
+    {
+      return ParaViewMCPRequestHandler::error(
+        requestId,
+        QStringLiteral("HISTORY_ERROR"),
+        errorText.isEmpty() ? QStringLiteral("Unable to retrieve history") : errorText);
+    }
+
+    Result handlerResult =
+      ParaViewMCPRequestHandler::success(requestId, QJsonObject{{"history", historyArray}});
+    handlerResult.HistoryJson =
+      QString::fromUtf8(QJsonDocument(historyArray).toJson(QJsonDocument::Compact));
+    return handlerResult;
+  }
+
+  if (type == QStringLiteral("restore_snapshot"))
+  {
+    const int entryId = params.value(QStringLiteral("entry_id")).toInt(-1);
+    if (entryId < 1)
+    {
+      return ParaViewMCPRequestHandler::error(
+        requestId,
+        QStringLiteral("INVALID_PARAMS"),
+        QStringLiteral("restore_snapshot requires a positive 'entry_id' integer"));
+    }
+
+    QJsonObject result;
+    QString errorText;
+    if (!this->PythonBridge.restoreSnapshot(entryId, &result, &errorText))
+    {
+      return ParaViewMCPRequestHandler::error(
+        requestId,
+        QStringLiteral("RESTORE_ERROR"),
+        errorText.isEmpty() ? QStringLiteral("Unable to restore snapshot") : errorText);
     }
 
     return ParaViewMCPRequestHandler::success(requestId, result);
