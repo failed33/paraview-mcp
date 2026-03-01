@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/failed33/paraview-mcp/graph/badge.svg?token=imlWhPGAgh)](https://codecov.io/gh/failed33/paraview-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Connect [ParaView](https://www.paraview.org/) to AI assistants through the [Model Context Protocol](https://modelcontextprotocol.io/).
+Connect [ParaView](https://www.paraview.org/) to LLM assistants through the [Model Context Protocol](https://modelcontextprotocol.io/).
 
 `paraview-mcp-server` has two runtime parts:
 
