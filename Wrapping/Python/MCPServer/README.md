@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.failed33/paraview-mcp-server -->
 # ParaView MCP Server
 
 This package is the external FastMCP server that talks to the ParaView MCP client plugin over TCP.
