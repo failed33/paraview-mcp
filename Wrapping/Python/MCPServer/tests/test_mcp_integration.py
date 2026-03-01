@@ -18,7 +18,10 @@ import sys
 import unittest
 from pathlib import Path
 
-import pytest
+try:
+    import pytest
+except ModuleNotFoundError:  # running under plain unittest without pytest
+    pytest = None
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -62,7 +65,10 @@ def _load_real_modules():
     return real_modules, client_cls, mcp_instance, error_cls
 
 
-_real_modules, _Client, _mcp, _ParaViewCommandError = _load_real_modules()
+try:
+    _real_modules, _Client, _mcp, _ParaViewCommandError = _load_real_modules()
+except Exception:  # fastmcp not installed — tests will be skipped
+    _real_modules, _Client, _mcp, _ParaViewCommandError = {}, None, None, None
 
 
 class _MockConnection:
@@ -97,7 +103,17 @@ def _get_tool_globals(mcp_server):
     raise RuntimeError("No tools registered on the server")
 
 
-@pytest.mark.integration
+_skip_reason = (
+    "pytest not installed"
+    if pytest is None
+    else "fastmcp not installed"
+    if _Client is None
+    else None
+)
+
+
+@unittest.skipIf(_skip_reason, _skip_reason or "")
+@(pytest.mark.integration if pytest else lambda cls: cls)
 class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
     """Test the MCP protocol surface through the real FastMCP Client."""
 
