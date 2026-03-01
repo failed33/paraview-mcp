@@ -29,9 +29,17 @@ paraview
 
 1. Open **Tools > ParaView MCP**.
 2. Click **Start Server** in the dock widget.
-3. Connect your MCP client:
-   ```bash
-   uvx paraview-mcp-server
-   ```
+3. Connect your MCP client (e. g. Cursor):
+
+```json
+{
+  "mcpServers": {
+    "paraview": {
+      "command": "uvx",
+      "args": ["paraview-mcp-server"]
+    }
+  }
+}
+```
 
 See <https://github.com/failed33/paraview-mcp> for full documentation.
