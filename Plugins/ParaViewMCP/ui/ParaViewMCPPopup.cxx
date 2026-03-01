@@ -1,5 +1,6 @@
 #include "ParaViewMCPPopup.h"
 
+#include "ParaViewMCPStateAppearance.h"
 #include "bridge/ParaViewMCPBridgeController.h"
 
 #include <QFormLayout>
@@ -16,28 +17,6 @@
 namespace
 {
   constexpr int PopupWidth = 320;
-
-  struct StateAppearance
-  {
-    const char* Label;
-    const char* Color;
-  };
-
-  StateAppearance appearanceForState(ParaViewMCPBridgeController::ServerState state)
-  {
-    switch (state)
-    {
-      case ParaViewMCPBridgeController::ServerState::Listening:
-        return {"Listening", "#F5A623"};
-      case ParaViewMCPBridgeController::ServerState::Connected:
-        return {"Connected", "#4CAF50"};
-      case ParaViewMCPBridgeController::ServerState::Error:
-        return {"Error", "#F44336"};
-      case ParaViewMCPBridgeController::ServerState::Stopped:
-      default:
-        return {"Stopped", "#999999"};
-    }
-  }
 } // namespace
 
 ParaViewMCPPopup::ParaViewMCPPopup(QWidget* parent)
@@ -196,6 +175,7 @@ void ParaViewMCPPopup::refreshFromController()
   const ParaViewMCPBridgeController& controller = ParaViewMCPBridgeController::instance();
   this->HostField->setText(controller.host());
   this->PortField->setValue(static_cast<int>(controller.port()));
+  this->TokenField->setText(controller.authToken());
   this->LogOutput->setPlainText(controller.lastLog());
 
   const auto appearance = appearanceForState(controller.serverState());

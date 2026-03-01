@@ -1,35 +1,11 @@
 #include "ParaViewMCPToolbar.h"
 
 #include "ParaViewMCPPopup.h"
+#include "ParaViewMCPStateAppearance.h"
 #include "bridge/ParaViewMCPBridgeController.h"
 
 #include <QIcon>
 #include <QToolButton>
-
-namespace
-{
-  struct StateAppearance
-  {
-    const char* Label;
-    const char* Color;
-  };
-
-  StateAppearance appearanceForState(ParaViewMCPBridgeController::ServerState state)
-  {
-    switch (state)
-    {
-      case ParaViewMCPBridgeController::ServerState::Listening:
-        return {"Listening", "#F5A623"};
-      case ParaViewMCPBridgeController::ServerState::Connected:
-        return {"Connected", "#4CAF50"};
-      case ParaViewMCPBridgeController::ServerState::Error:
-        return {"Error", "#F44336"};
-      case ParaViewMCPBridgeController::ServerState::Stopped:
-      default:
-        return {"Stopped", "#999999"};
-    }
-  }
-} // namespace
 
 ParaViewMCPToolbar::ParaViewMCPToolbar(const QString& title, QWidget* parent)
     : QToolBar(title, parent)

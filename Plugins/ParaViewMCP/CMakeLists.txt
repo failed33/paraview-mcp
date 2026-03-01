@@ -20,6 +20,7 @@ set(paraview_mcp_plugin_sources
   ui/ParaViewMCPActionGroup.h
   ui/ParaViewMCPPopup.cxx
   ui/ParaViewMCPPopup.h
+  ui/ParaViewMCPStateAppearance.h
   ui/ParaViewMCPToolbar.cxx
   ui/ParaViewMCPToolbar.h
 )

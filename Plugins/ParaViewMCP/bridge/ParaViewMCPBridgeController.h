@@ -38,6 +38,7 @@ public:
 
   QString host() const;
   quint16 port() const;
+  QString authToken() const;
   bool isListening() const;
   bool hasClient() const;
   QString lastStatus() const;

@@ -103,6 +103,11 @@ quint16 ParaViewMCPBridgeController::port() const
   return this->Config.Port;
 }
 
+QString ParaViewMCPBridgeController::authToken() const
+{
+  return this->Config.AuthToken;
+}
+
 bool ParaViewMCPBridgeController::isListening() const
 {
   return this->SocketBridge.isListening();
