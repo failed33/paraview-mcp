@@ -29,8 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qt6-tools-dev \
     qt6-tools-dev-tools \
     qt6-5compat-dev \
-    libqt6svg6-dev \
-    libqt6opengl6-dev \
+    qt6-svg-dev \
+    qt6-l10n-tools \
     xsltproc \
     && rm -rf /var/lib/apt/lists/*
 
@@ -72,12 +72,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libosmesa6 \
     libfontconfig1 \
     libxkbcommon0 \
-    libxt6 \
+    libxt6t64 \
     libxext6 \
     qt6-base-dev \
     qt6-tools-dev \
-    libqt6svg6-dev \
-    libqt6opengl6-dev \
+    qt6-5compat-dev \
+    qt6-svg-dev \
+    qt6-l10n-tools \
     git \
     curl \
     gpg \
