@@ -58,12 +58,6 @@ jobs:
     env:
       TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
     steps:
-      - name: Install build dependencies
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends python3-pip qt6-tools-dev git
-          pip3 install cmake==3.31.4
-
       - name: Checkout source
         run: |
           git clone --depth 1 --branch "$TAG_NAME" \

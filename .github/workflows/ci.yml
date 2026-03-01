@@ -50,11 +50,6 @@ jobs:
     container: ghcr.io/${{ github.repository }}-ci:6.0.1
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Install build dependencies
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends python3-pip qt6-tools-dev
-          pip3 install cmake==3.31.4
       - name: Configure
         run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
       - name: Build

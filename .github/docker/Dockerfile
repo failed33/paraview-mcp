@@ -58,22 +58,26 @@ FROM ubuntu:24.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake \
     ninja-build \
     build-essential \
     python3-dev \
+    python3-pip \
     libgl1-mesa-dev \
     libosmesa6 \
     libfontconfig1 \
     libxkbcommon0 \
     libxt6 \
     libxext6 \
-    python3-pip \
     qt6-base-dev \
     qt6-tools-dev \
     libqt6svg6-dev \
     libqt6opengl6-dev \
-    && rm -rf /var/lib/apt/lists/*
+    git \
+    curl \
+    gpg \
+    lcov \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir --break-system-packages cmake==3.31.4
 
 COPY --from=builder /opt/paraview /opt/paraview
 
