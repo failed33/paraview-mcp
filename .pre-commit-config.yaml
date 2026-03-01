@@ -1,4 +1,4 @@
-default_install_hook_types: [pre-commit, commit-msg]
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
 default_stages: [pre-commit]
 
 repos:
@@ -38,3 +38,20 @@ repos:
       - id: commitlint
         stages: [commit-msg]
         additional_dependencies: ["@commitlint/config-conventional"]
+
+  - repo: local
+    hooks:
+      - id: license-compatibility
+        name: license-compatibility
+        language: system
+        entry: bash -c 'cd Wrapping/Python/MCPServer && uv run licensecheck -r pyproject.toml --zero'
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+      - id: license-allowlist
+        name: license-allowlist
+        language: system
+        entry: bash -c 'cd Wrapping/Python/MCPServer && uv run pip-licenses --ignore-packages pyrefly ruff pip-licenses licensecheck coverage pytest pytest-cov pluggy iniconfig packaging --allow-only="MIT;MIT License;BSD-3-Clause;BSD-2-Clause;BSD License;Apache-2.0;Apache Software License;Apache-2.0 OR BSD-3-Clause;Apache-2.0 OR BSD-2-Clause;Apache Software License; MIT License;ISC License (ISCL);PSF-2.0;Mozilla Public License 2.0 (MPL 2.0)" > /dev/null'
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
