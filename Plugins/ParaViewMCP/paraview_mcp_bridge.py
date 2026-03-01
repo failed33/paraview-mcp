@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import datetime
 import io
 import json
 import os
@@ -12,6 +13,8 @@ from contextlib import redirect_stderr, redirect_stdout
 from typing import Any
 
 _SESSION_GLOBALS: dict[str, Any] | None = None
+_HISTORY: list[dict] = []
+_NEXT_ID: int = 1
 
 
 def _new_session() -> dict[str, Any]:
@@ -37,6 +40,15 @@ def _ensure_session() -> dict[str, Any]:
     if _SESSION_GLOBALS is None:
         _SESSION_GLOBALS = _new_session()
     return _SESSION_GLOBALS
+
+
+def _capture_snapshot() -> str | None:
+    try:
+        from paraview import smstate
+
+        return smstate.get_state()
+    except Exception:
+        return None
 
 
 def _json_value(value: Any) -> Any:
@@ -70,14 +82,28 @@ def bootstrap() -> str:
     return json.dumps({"ok": True})
 
 
+def get_history() -> str:
+    lightweight = []
+    for entry in _HISTORY:
+        slim = {k: v for k, v in entry.items() if k != "snapshot"}
+        slim["has_snapshot"] = entry.get("snapshot") is not None
+        lightweight.append(slim)
+    return json.dumps(lightweight)
+
+
 def reset_session() -> str:
-    global _SESSION_GLOBALS
+    global _SESSION_GLOBALS, _HISTORY, _NEXT_ID
     _SESSION_GLOBALS = _new_session()
+    _HISTORY = []
+    _NEXT_ID = 1
     return json.dumps({"ok": True})
 
 
 def execute_python(code: str) -> str:
+    global _NEXT_ID
+
     namespace = _ensure_session()
+    snapshot = _capture_snapshot()
     stdout_buffer = io.StringIO()
     stderr_buffer = io.StringIO()
     result = {
@@ -98,6 +124,24 @@ def execute_python(code: str) -> str:
 
     result["stdout"] = stdout_buffer.getvalue()
     result["stderr"] = stderr_buffer.getvalue()
+
+    result_summary = result["stdout"]
+    if result["error"]:
+        result_summary = f"{result_summary}{result['error']}"
+
+    _HISTORY.append(
+        {
+            "id": _NEXT_ID,
+            "command": "execute_python",
+            "code": code,
+            "snapshot": snapshot,
+            "result": result_summary,
+            "status": "error" if not result["ok"] else "success",
+            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+        }
+    )
+    _NEXT_ID += 1
+
     return json.dumps(result)
 
 
