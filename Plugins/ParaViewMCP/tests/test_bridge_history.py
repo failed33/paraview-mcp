@@ -19,10 +19,11 @@ def _bridge(monkeypatch: pytest.MonkeyPatch):
     simple_mod = types.ModuleType("paraview.simple")
     sm_mod = types.ModuleType("paraview.servermanager")
     smstate_mod = types.ModuleType("paraview.smstate")
-    smstate_mod.get_state = MagicMock(return_value="state{}")  # type: ignore[attr-defined]
+    smstate_mod.get_state = MagicMock(return_value="state = {}")  # type: ignore[attr-defined]
 
     simple_mod.GetSources = MagicMock(return_value={})  # type: ignore[attr-defined]
     simple_mod.GetActiveView = MagicMock(return_value=None)  # type: ignore[attr-defined]
+    simple_mod.ResetSession = MagicMock()  # type: ignore[attr-defined]
 
     paraview_mod.simple = simple_mod  # type: ignore[attr-defined]
     paraview_mod.servermanager = sm_mod  # type: ignore[attr-defined]
@@ -121,3 +122,47 @@ def test_mixed_command_history(_bridge) -> None:
     assert history[0]["has_snapshot"] is True
     assert history[1]["has_snapshot"] is False
     assert history[2]["has_snapshot"] is True
+
+
+def test_restore_snapshot_truncates_history(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    bridge.execute_python("y = 2")
+    bridge.execute_python("z = 3")
+    assert len(json.loads(bridge.get_history())) == 3
+
+    result = json.loads(bridge.restore_snapshot(2))
+    assert result["ok"] is True
+
+    history = json.loads(bridge.get_history())
+    assert len(history) == 1
+    assert history[0]["id"] == 1
+
+
+def test_restore_snapshot_invalid_id(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    result = json.loads(bridge.restore_snapshot(999))
+    assert result["ok"] is False
+    assert "error" in result
+
+
+def test_restore_snapshot_no_snapshot_entry(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.inspect_pipeline()
+    result = json.loads(bridge.restore_snapshot(1))
+    assert result["ok"] is False
+
+
+def test_restore_calls_reset_session(_bridge) -> None:
+    import paraview.simple as simple
+
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    simple.ResetSession = MagicMock()
+    bridge.restore_snapshot(1)
+    simple.ResetSession.assert_called_once()

@@ -117,6 +117,52 @@ def reset_session() -> str:
     return json.dumps({"ok": True})
 
 
+def restore_snapshot(entry_id: int) -> str:
+    """Restore pipeline state to before the given history entry.
+
+    Truncates history to entries before entry_id.
+    """
+    global _SESSION_GLOBALS, _HISTORY, _NEXT_ID
+    from paraview import simple
+
+    target = None
+    target_idx = None
+    for idx, entry in enumerate(_HISTORY):
+        if entry["id"] == entry_id:
+            target = entry
+            target_idx = idx
+            break
+
+    if target is None:
+        return json.dumps(
+            {"ok": False, "error": f"No history entry with id {entry_id}"}
+        )
+
+    snapshot = target.get("snapshot")
+    if snapshot is None:
+        return json.dumps(
+            {"ok": False, "error": "Entry has no snapshot (read-only command)"}
+        )
+
+    try:
+        simple.ResetSession()
+        exec(snapshot, {"__builtins__": __builtins__})
+    except Exception as exc:
+        return json.dumps(
+            {
+                "ok": False,
+                "error": f"Failed to restore snapshot: {exc}",
+                "traceback": traceback.format_exc(),
+            }
+        )
+
+    _HISTORY = _HISTORY[:target_idx]
+    _NEXT_ID = (_HISTORY[-1]["id"] + 1) if _HISTORY else 1
+    _SESSION_GLOBALS = _new_session()
+
+    return json.dumps({"ok": True})
+
+
 def execute_python(code: str) -> str:
     global _NEXT_ID
 
