@@ -61,7 +61,7 @@ def test_get_history_after_execute(_bridge) -> None:
     assert entry["id"] == 1
     assert entry["command"] == "execute_python"
     assert entry["code"] == "x = 1 + 1"
-    assert entry["status"] == "success"
+    assert entry["status"] == "ok"
     assert isinstance(entry["has_snapshot"], bool)
     assert "snapshot" not in entry
     assert "timestamp" in entry
@@ -87,4 +87,4 @@ def test_history_captures_error(_bridge) -> None:
     assert len(history) == 1
     entry = history[0]
     assert entry["status"] == "error"
-    assert "boom" in entry["result"]
+    assert "boom" in entry["result"]["error"]

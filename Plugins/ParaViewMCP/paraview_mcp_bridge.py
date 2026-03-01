@@ -125,19 +125,17 @@ def execute_python(code: str) -> str:
     result["stdout"] = stdout_buffer.getvalue()
     result["stderr"] = stderr_buffer.getvalue()
 
-    result_summary = result["stdout"]
-    if result["error"]:
-        result_summary = f"{result_summary}{result['error']}"
-
     _HISTORY.append(
         {
             "id": _NEXT_ID,
             "command": "execute_python",
             "code": code,
             "snapshot": snapshot,
-            "result": result_summary,
-            "status": "error" if not result["ok"] else "success",
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "result": {"stdout": result["stdout"], "error": result["error"]},
+            "status": "error" if not result["ok"] else "ok",
+            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime(
+                "%H:%M:%S"
+            ),
         }
     )
     _NEXT_ID += 1
