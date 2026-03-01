@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.3](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.2...ParaViewMCP-v0.1.3) (2026-03-01)
+
+
+### Features
+
+* **ci:** add workflow_dispatch trigger to CI, Coverage, and CodeQL ([7fa0373](https://github.com/failed33/paraview-mcp/commit/7fa0373a89e69c4117a782e3f22b835b692e2244))
+* **ci:** switch from Qt5 to Qt6 across all builds ([bac8a16](https://github.com/failed33/paraview-mcp/commit/bac8a166442bce6ea2dcfdcc85caa90d1a7cba89))
+
+
+### Bug Fixes
+
+* **ci:** remove unused ThirdParty lcov exclude pattern ([9ec1746](https://github.com/failed33/paraview-mcp/commit/9ec1746653e3d562bb3a69fcc3c4d55fe6d457c9))
+* **ci:** update docker/build-push-action to v6.19.2 ([44b590f](https://github.com/failed33/paraview-mcp/commit/44b590f82217fd5da300466c89aee391f35281ba))
+* **ci:** use custom CI container for Linux release build ([6d557ba](https://github.com/failed33/paraview-mcp/commit/6d557ba2790e0e0b6cdc08b6a0360cea47932ff2))
+* **docker:** add Qt6Core5Compat package for ParaView Qt6 build ([15b0739](https://github.com/failed33/paraview-mcp/commit/15b0739ece1a6308bd12041f2fdcf5e3121f2e72))
+* **docker:** add xsltproc for ParaView Qt6 build ([f73464f](https://github.com/failed33/paraview-mcp/commit/f73464f119d020dac6510982e6b66042eee056a8))
+* **docker:** bake all build deps into CI image, remove redundant installs ([f32a18b](https://github.com/failed33/paraview-mcp/commit/f32a18bebe535507c1fd358f846ae190dafbb68e))
+* **docker:** isolate ParaView build layer and use registry caching ([04e4a99](https://github.com/failed33/paraview-mcp/commit/04e4a9992c919fea868c4329541146adf233cb04))
+* **docker:** use correct Qt6 package names for Ubuntu 24.04 ([80ea745](https://github.com/failed33/paraview-mcp/commit/80ea7451906b4f4e4e5feb0d51c40dc8ef7a35a2))
+
 ## [0.1.2](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.1...ParaViewMCP-v0.1.2) (2026-02-28)
 
 
