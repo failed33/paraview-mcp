@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
 
@@ -18,4 +19,6 @@ public:
   virtual bool inspectPipeline(QJsonObject* result, QString* error = nullptr) = 0;
   virtual bool
   captureScreenshot(int width, int height, QJsonObject* result, QString* error = nullptr) = 0;
+  virtual bool getHistory(QJsonArray* result, QString* error = nullptr) = 0;
+  virtual bool restoreSnapshot(int entryId, QJsonObject* result, QString* error = nullptr) = 0;
 };
