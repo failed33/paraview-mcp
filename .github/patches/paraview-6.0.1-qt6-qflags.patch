@@ -1,0 +1,99 @@
+Fix QString::arg() calls with QFlags types for Qt 6.9+
+
+In Qt 6.9, QFlags<T> is no longer implicitly convertible to int,
+causing QString::arg(QFlags<T>) to fail template substitution.
+Add explicit static_cast<int>() around mouseEvent->button(),
+mouseEvent->buttons(), and mouseEvent->modifiers() calls.
+
+Affects: ParaView core (Qt/Core) and ThirdParty/QtTesting
+
+diff --git a/Qt/Core/pqFlatTreeViewEventTranslator.cxx b/Qt/Core/pqFlatTreeViewEventTranslator.cxx
+index 52775c6..08ca90b 100644
+--- a/Qt/Core/pqFlatTreeViewEventTranslator.cxx
++++ b/Qt/Core/pqFlatTreeViewEventTranslator.cxx
+@@ -72,9 +72,9 @@ bool pqFlatTreeViewEventTranslator::translateEvent(QObject* Object, QEvent* Even
+       relPt = mouseEvent->pos() - r.topLeft();
+
+       QString info = QString("%1,%2,%3,%4,%5,%6")
+-                       .arg(mouseEvent->button())
+-                       .arg(mouseEvent->buttons())
+-                       .arg(mouseEvent->modifiers())
++                       .arg(static_cast<int>(mouseEvent->button()))
++                       .arg(static_cast<int>(mouseEvent->buttons()))
++                       .arg(static_cast<int>(mouseEvent->modifiers()))
+                        .arg(relPt.x())
+                        .arg(relPt.y())
+                        .arg(idxStr);
+diff --git a/Qt/Core/pqQVTKWidgetEventTranslator.cxx b/Qt/Core/pqQVTKWidgetEventTranslator.cxx
+index dfc9522..a78b48c 100644
+--- a/Qt/Core/pqQVTKWidgetEventTranslator.cxx
++++ b/Qt/Core/pqQVTKWidgetEventTranslator.cxx
+@@ -89,9 +89,9 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
+             QString("(%1,%2,%3,%4,%5)")
+               .arg(normalized_x)
+               .arg(normalized_y)
+-              .arg(mouseEvent->button())
+-              .arg(mouseEvent->buttons())
+-              .arg(mouseEvent->modifiers()));
++              .arg(static_cast<int>(mouseEvent->button()))
++              .arg(static_cast<int>(mouseEvent->buttons()))
++              .arg(static_cast<int>(mouseEvent->modifiers())));
+         }
+         return true;
+         break;
+@@ -117,16 +117,16 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
+             QString("(%1,%2,%3,%4,%5)")
+               .arg(normalized_x)
+               .arg(normalized_y)
+-              .arg(mouseEvent->button())
+-              .arg(mouseEvent->buttons())
+-              .arg(mouseEvent->modifiers()));
++              .arg(static_cast<int>(mouseEvent->button()))
++              .arg(static_cast<int>(mouseEvent->buttons()))
++              .arg(static_cast<int>(mouseEvent->modifiers())));
+           Q_EMIT recordEvent(widget, "mouseRelease",
+             QString("(%1,%2,%3,%4,%5)")
+               .arg(normalized_x)
+               .arg(normalized_y)
+-              .arg(mouseEvent->button())
+-              .arg(mouseEvent->buttons())
+-              .arg(mouseEvent->modifiers()));
++              .arg(static_cast<int>(mouseEvent->button()))
++              .arg(static_cast<int>(mouseEvent->buttons()))
++              .arg(static_cast<int>(mouseEvent->modifiers())));
+         }
+         return true;
+         break;
+diff --git a/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx b/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx
+index 31b1d44..626d731 100644
+--- a/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx
++++ b/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx
+@@ -89,9 +89,9 @@ bool pqAbstractItemViewEventTranslator::translateEvent(QObject* Object, QEvent*
+       }
+
+       QString info = QString("%1,%2,%3,%4,%5,%6")
+-                       .arg(mouseEvent->button())
+-                       .arg(mouseEvent->buttons())
+-                       .arg(mouseEvent->modifiers())
++                       .arg(static_cast<int>(mouseEvent->button()))
++                       .arg(static_cast<int>(mouseEvent->buttons()))
++                       .arg(static_cast<int>(mouseEvent->modifiers()))
+                        .arg(relPt.x())
+                        .arg(relPt.y())
+                        .arg(idxStr);
+diff --git a/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx b/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx
+index afdd360..43f2771 100644
+--- a/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx
++++ b/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx
+@@ -52,9 +52,9 @@ bool pqBasicWidgetEventTranslator::translateEvent(
+         auto pos = mouseEvent->position().toPoint();
+ #endif
+         QString info = QString("%1,%2,%3,%4,%5")
+-                         .arg(mouseEvent->button())
+-                         .arg(mouseEvent->buttons())
+-                         .arg(mouseEvent->modifiers())
++                         .arg(static_cast<int>(mouseEvent->button()))
++                         .arg(static_cast<int>(mouseEvent->buttons()))
++                         .arg(static_cast<int>(mouseEvent->modifiers()))
+                          .arg(pos.x())
+                          .arg(pos.y());

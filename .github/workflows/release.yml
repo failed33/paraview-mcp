@@ -124,13 +124,14 @@ jobs:
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt6
+          key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt6-${{ hashFiles('.github/patches/**') }}
 
       - name: Build ParaView SDK
         if: steps.cache-paraview.outputs.cache-hit != 'true'
         run: |
           git clone --recursive --branch ${{ env.PARAVIEW_VERSION }} --depth 1 \
             https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src
+          git -C /tmp/paraview-src apply "$GITHUB_WORKSPACE/.github/patches/paraview-6.0.1-qt6-qflags.patch"
           cmake \
             -S /tmp/paraview-src \
             -B /tmp/paraview-build \
