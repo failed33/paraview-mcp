@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Documentation/Images/paraview-mcp-logo.png" width="200" alt="ParaView MCP">
+</p>
+
 # ParaView MCP
 
 [![CI](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/failed33/paraview-mcp/actions/workflows/ci.yml)
