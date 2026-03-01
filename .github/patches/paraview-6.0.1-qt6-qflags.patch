@@ -1,12 +1,3 @@
-Fix QString::arg() calls with QFlags types for Qt 6.9+
-
-In Qt 6.9, QFlags<T> is no longer implicitly convertible to int,
-causing QString::arg(QFlags<T>) to fail template substitution.
-Add explicit static_cast<int>() around mouseEvent->button(),
-mouseEvent->buttons(), and mouseEvent->modifiers() calls.
-
-Affects: ParaView core (Qt/Core) and ThirdParty/QtTesting
-
 diff --git a/Qt/Core/pqFlatTreeViewEventTranslator.cxx b/Qt/Core/pqFlatTreeViewEventTranslator.cxx
 index 52775c6..08ca90b 100644
 --- a/Qt/Core/pqFlatTreeViewEventTranslator.cxx
@@ -64,7 +55,7 @@ index dfc9522..a78b48c 100644
          }
          return true;
          break;
-diff --git a/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx b/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx
+diff --git a/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx b/pqAbstractItemViewEventTranslator.cxx
 index 31b1d44..626d731 100644
 --- a/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx
 +++ b/ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx
@@ -81,7 +72,7 @@ index 31b1d44..626d731 100644
                         .arg(relPt.x())
                         .arg(relPt.y())
                         .arg(idxStr);
-diff --git a/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx b/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx
+diff --git a/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx b/pqBasicWidgetEventTranslator.cxx
 index afdd360..43f2771 100644
 --- a/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx
 +++ b/ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx

@@ -152,7 +152,7 @@ jobs:
         run: |
           git clone --recursive --branch ${{ env.PARAVIEW_VERSION }} --depth 1 \
             https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src
-          git -C /tmp/paraview-src apply "$GITHUB_WORKSPACE/.github/patches/paraview-6.0.1-qt6-qflags.patch"
+          patch -d /tmp/paraview-src -p1 < "$GITHUB_WORKSPACE/.github/patches/paraview-6.0.1-qt6-qflags.patch"
           cmake \
             -S /tmp/paraview-src \
             -B /tmp/paraview-build \
