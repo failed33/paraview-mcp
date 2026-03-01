@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 license = {text = "MIT"}
 dependencies = [
-    "mcp[cli]>=1.26.0,<2",
+    "fastmcp>=3.0.0,<4",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -41,6 +41,7 @@ dev = [
     "pytest-cov",
     "pip-licenses>=5.0",
     "licensecheck>=2025.1",
+    "fastmcp>=3.0.0,<4",
 ]
 
 [tool.ruff]
@@ -56,3 +57,6 @@ quote-style = "double"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: tests requiring the fastmcp package",
+]

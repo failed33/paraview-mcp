@@ -14,7 +14,8 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
-from mcp.server.fastmcp import Context, FastMCP, Image
+from fastmcp import Context, FastMCP
+from fastmcp.utilities.types import Image
 
 from .protocol import (
     DEFAULT_HOST,

@@ -8,9 +8,9 @@ import types
 
 
 def install_fastmcp_stub() -> None:
-    """Install a minimal mcp.server.fastmcp stub for unit tests."""
+    """Install a minimal fastmcp stub for unit tests."""
 
-    if "mcp.server.fastmcp" in sys.modules:
+    if "fastmcp" in sys.modules:
         return
 
     class _Context:
@@ -41,17 +41,19 @@ def install_fastmcp_stub() -> None:
         def run(self) -> None:
             return None
 
-    fastmcp_module = types.ModuleType("mcp.server.fastmcp")
-    fastmcp_module.Context = _Context
+    # fastmcp.utilities.types module (provides Image)
+    types_module = types.ModuleType("fastmcp.utilities.types")
+    types_module.Image = _Image
+
+    utilities_module = types.ModuleType("fastmcp.utilities")
+    utilities_module.types = types_module
+
+    # fastmcp top-level module (provides FastMCP, Context)
+    fastmcp_module = types.ModuleType("fastmcp")
     fastmcp_module.FastMCP = _FastMCP
-    fastmcp_module.Image = _Image
+    fastmcp_module.Context = _Context
+    fastmcp_module.utilities = utilities_module
 
-    server_package = types.ModuleType("mcp.server")
-    server_package.fastmcp = fastmcp_module
-
-    mcp_package = types.ModuleType("mcp")
-    mcp_package.server = server_package
-
-    sys.modules["mcp"] = mcp_package
-    sys.modules["mcp.server"] = server_package
-    sys.modules["mcp.server.fastmcp"] = fastmcp_module
+    sys.modules["fastmcp"] = fastmcp_module
+    sys.modules["fastmcp.utilities"] = utilities_module
+    sys.modules["fastmcp.utilities.types"] = types_module
