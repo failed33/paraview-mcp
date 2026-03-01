@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.1.4](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.3...ParaViewMCP-v0.1.4) (2026-03-01)
+
+
+### Features
+
+* **ci:** add third-party license notices and CI license validation ([b2e664e](https://github.com/failed33/paraview-mcp/commit/b2e664e1b6d7c69bca956e7e100dace32e8b14de))
+* **ci:** auto-generate Python section of THIRD-PARTY-NOTICES.txt ([5bb45e1](https://github.com/failed33/paraview-mcp/commit/5bb45e1cf2bbfe10164879521917a4819f109388))
+* prepare server.json for MCP registry publishing ([e01a9e8](https://github.com/failed33/paraview-mcp/commit/e01a9e883301b4ff4ac3a47148497f34f4b9b46a))
+
+
+### Bug Fixes
+
+* apply Qt 6.9 QFlags compatibility patch for macOS ParaView build ([b0f8be2](https://github.com/failed33/paraview-mcp/commit/b0f8be2cd327e9946970a5fc593df53dbd85e8c7))
+
+
+### Documentation
+
+* add "Inspired by" section to README ([d96dadd](https://github.com/failed33/paraview-mcp/commit/d96dadd0456e03a4dffadf4deb0da4ed7ef7708c))
+* simplify README prerequisites and remove installation instructions for MCP server ([b6fedeb](https://github.com/failed33/paraview-mcp/commit/b6fedebeaad2f23bebe77d56748f3195f5014139))
+* update installation instructions for MCP client connection in the packaged instructons ([c324fb9](https://github.com/failed33/paraview-mcp/commit/c324fb975517448bb2c1a9161f5b3c85ae34d58e))
+* update README to replace "AI assistants" with "LLM assistants" for clarity ([587a75a](https://github.com/failed33/paraview-mcp/commit/587a75a249a8f1c82d51cea4e7ac2db4f2e54b6d))
+
 ## [0.1.3](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.2...ParaViewMCP-v0.1.3) (2026-03-01)
 
 
