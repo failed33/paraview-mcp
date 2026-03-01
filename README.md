@@ -16,8 +16,7 @@ Connect [ParaView](https://www.paraview.org/) to LLM assistants through the [Mod
 ## Prerequisites
 
 - [ParaView 6.0.1](https://www.paraview.org/download/) with the MCP plugin loaded (see [Plugin Setup](#set-up-the-paraview-plugin))
-- [Python](https://www.python.org/) >= 3.13
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+- [uv](https://docs.astral.sh/uv/)
 
 ## Quick Start
 
@@ -28,20 +27,6 @@ claude mcp add paraview -- uvx paraview-mcp-server
 ```
 
 Then [set up the ParaView plugin](#set-up-the-paraview-plugin) and you're ready to go.
-
-## Install the MCP Server
-
-Run without installing (recommended):
-
-```bash
-uvx paraview-mcp-server
-```
-
-Or install from PyPI:
-
-```bash
-pip install paraview-mcp-server
-```
 
 ## Set Up the ParaView Plugin
 
