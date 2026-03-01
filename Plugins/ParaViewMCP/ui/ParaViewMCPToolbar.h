@@ -3,7 +3,9 @@
 #include <QToolBar>
 
 class ParaViewMCPPopup;
+class QLabel;
 class QToolButton;
+class QWidget;
 
 class ParaViewMCPToolbar : public QToolBar
 {
@@ -19,5 +21,7 @@ private:
   void updateButtonAppearance();
 
   QToolButton* Button = nullptr;
+  QLabel* StatusDot = nullptr;
+  QWidget* Container = nullptr;
   ParaViewMCPPopup* Popup = nullptr;
 };

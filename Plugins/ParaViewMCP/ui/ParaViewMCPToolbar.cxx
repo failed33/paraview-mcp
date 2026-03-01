@@ -4,7 +4,9 @@
 #include "ParaViewMCPStateAppearance.h"
 #include "bridge/ParaViewMCPBridgeController.h"
 
+#include <QHBoxLayout>
 #include <QIcon>
+#include <QLabel>
 #include <QToolButton>
 
 ParaViewMCPToolbar::ParaViewMCPToolbar(const QString& title, QWidget* parent)
@@ -25,11 +27,23 @@ void ParaViewMCPToolbar::constructor()
 {
   this->Popup = new ParaViewMCPPopup(this);
 
-  this->Button = new QToolButton(this);
+  // Container widget: [icon button] [dot]
+  this->Container = new QWidget(this);
+  auto* layout = new QHBoxLayout(this->Container);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(2);
+
+  this->Button = new QToolButton(this->Container);
   this->Button->setIcon(QIcon(QStringLiteral(":/ParaViewMCP/mcp-icon.png")));
-  this->Button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-  this->Button->setToolTip(QStringLiteral("ParaView MCP Server"));
-  this->addWidget(this->Button);
+  this->Button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  this->Button->setAutoRaise(true);
+  layout->addWidget(this->Button);
+
+  this->StatusDot = new QLabel(this->Container);
+  this->StatusDot->setFixedSize(8, 8);
+  layout->addWidget(this->StatusDot);
+
+  this->addWidget(this->Container);
 
   this->updateButtonAppearance();
 
@@ -57,8 +71,20 @@ void ParaViewMCPToolbar::constructor()
 
 void ParaViewMCPToolbar::updateButtonAppearance()
 {
-  const auto appearance = appearanceForState(ParaViewMCPBridgeController::instance().serverState());
-  this->Button->setText(QLatin1String(appearance.Label));
-  this->Button->setStyleSheet(
-    QStringLiteral("QToolButton { color: %1; }").arg(QLatin1String(appearance.Color)));
+  const auto& controller = ParaViewMCPBridgeController::instance();
+  const auto appearance = appearanceForState(controller.serverState());
+
+  this->StatusDot->setStyleSheet(QStringLiteral("background-color: %1; border-radius: 4px;")
+                                   .arg(QLatin1String(appearance.Color)));
+
+  const QString statusText = QLatin1String(appearance.Label);
+  if (controller.isListening())
+  {
+    this->Button->setToolTip(
+      QStringLiteral("MCP: %1 on :%2").arg(statusText).arg(controller.port()));
+  }
+  else
+  {
+    this->Button->setToolTip(QStringLiteral("MCP: %1").arg(statusText));
+  }
 }
