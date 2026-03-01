@@ -101,11 +101,11 @@ Add to `.cursor/mcp.json` in your project root:
 
 The server connects to the ParaView plugin using these environment variables:
 
-| Variable | Default | Required | Description |
-|----------|---------|----------|-------------|
-| `PARAVIEW_HOST` | `127.0.0.1` | No | Host where the ParaView plugin is listening |
-| `PARAVIEW_PORT` | `9877` | No | TCP port for the plugin bridge |
-| `PARAVIEW_AUTH_TOKEN` | — | Non-loopback only | Authentication token (must match the plugin setting) |
+| Variable              | Default     | Required          | Description                                          |
+| --------------------- | ----------- | ----------------- | ---------------------------------------------------- |
+| `PARAVIEW_HOST`       | `127.0.0.1` | No                | Host where the ParaView plugin is listening          |
+| `PARAVIEW_PORT`       | `9877`      | No                | TCP port for the plugin bridge                       |
+| `PARAVIEW_AUTH_TOKEN` | —           | Non-loopback only | Authentication token (must match the plugin setting) |
 
 Defaults work for a standard local setup. Override these when connecting to ParaView on a remote machine or non-standard port:
 
@@ -127,11 +127,19 @@ Defaults work for a standard local setup. Override these when connecting to Para
 
 ## Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `execute_paraview_code(code)` | Execute Python code inside the active ParaView session |
-| `get_pipeline_info()` | Return a JSON snapshot of the current pipeline |
-| `get_screenshot(width, height)` | Capture the active render view as a PNG image |
+| Tool                            | Description                                            |
+| ------------------------------- | ------------------------------------------------------ |
+| `execute_paraview_code(code)`   | Execute Python code inside the active ParaView session |
+| `get_pipeline_info()`           | Return a JSON snapshot of the current pipeline         |
+| `get_screenshot(width, height)` | Capture the active render view as a PNG image          |
+
+## Inspired by
+
+This project follows the approach of [Blender-MCP](https://github.com/ahujasid/blender-mcp) and [Slicer-MCP](https://github.com/pieper/SlicerMCP), both of which give LLMs direct code execution inside their respective application runtimes. The existing [Paraview_MCP](https://github.com/llnl/paraview_mcp) implementation[^1] takes a different approach, exposing a fixed set of high-level tools without access to the underlying Python runtime, which limits flexibility for custom workflows.
+
+We instead provide an `execute_paraview_code` tool that runs arbitrary Python inside the ParaView session, giving the AI agent the same level of control a human scripter would have.
+
+[^1]: S. Liu, H. Miao, and P.-T. Bremer, "Paraview-MCP: Autonomous Visualization Agents with Direct Tool Use," in _Proc. IEEE VIS 2025 Short Papers_, IEEE, 2025.
 
 ## Contributing
 
@@ -139,4 +147,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions, development setup
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) — see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for dependency licenses.
