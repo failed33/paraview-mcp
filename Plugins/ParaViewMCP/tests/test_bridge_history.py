@@ -21,6 +21,9 @@ def _bridge(monkeypatch: pytest.MonkeyPatch):
     smstate_mod = types.ModuleType("paraview.smstate")
     smstate_mod.get_state = MagicMock(return_value="state{}")  # type: ignore[attr-defined]
 
+    simple_mod.GetSources = MagicMock(return_value={})  # type: ignore[attr-defined]
+    simple_mod.GetActiveView = MagicMock(return_value=None)  # type: ignore[attr-defined]
+
     paraview_mod.simple = simple_mod  # type: ignore[attr-defined]
     paraview_mod.servermanager = sm_mod  # type: ignore[attr-defined]
     paraview_mod.smstate = smstate_mod  # type: ignore[attr-defined]
@@ -88,3 +91,33 @@ def test_history_captures_error(_bridge) -> None:
     entry = history[0]
     assert entry["status"] == "error"
     assert "boom" in entry["result"]["error"]
+
+
+def test_inspect_pipeline_logged_without_snapshot(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.inspect_pipeline()
+    history = json.loads(bridge.get_history())
+    assert len(history) == 1
+    entry = history[0]
+    assert entry["command"] == "inspect_pipeline"
+    assert entry["has_snapshot"] is False
+    assert entry["status"] == "ok"
+
+
+def test_mixed_command_history(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    bridge.inspect_pipeline()
+    bridge.execute_python("y = 2")
+    history = json.loads(bridge.get_history())
+    assert len(history) == 3
+    assert [e["command"] for e in history] == [
+        "execute_python",
+        "inspect_pipeline",
+        "execute_python",
+    ]
+    assert history[0]["has_snapshot"] is True
+    assert history[1]["has_snapshot"] is False
+    assert history[2]["has_snapshot"] is True

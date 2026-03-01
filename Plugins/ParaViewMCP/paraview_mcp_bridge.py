@@ -77,6 +77,24 @@ def _json_value(value: Any) -> Any:
     return None
 
 
+def _log_readonly(command: str, result_summary: str | None = None) -> None:
+    global _NEXT_ID
+    _HISTORY.append(
+        {
+            "id": _NEXT_ID,
+            "command": command,
+            "code": None,
+            "snapshot": None,
+            "result": result_summary,
+            "status": "ok",
+            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime(
+                "%H:%M:%S"
+            ),
+        }
+    )
+    _NEXT_ID += 1
+
+
 def bootstrap() -> str:
     _ensure_session()
     return json.dumps({"ok": True})
@@ -218,6 +236,7 @@ def inspect_pipeline() -> str:
 
         sources.append(entry)
 
+    _log_readonly("inspect_pipeline")
     return json.dumps({"count": len(sources), "sources": sources})
 
 
@@ -240,6 +259,7 @@ def capture_screenshot(width: int, height: int) -> str:
         )
         with open(path, "rb") as handle:
             image_bytes = handle.read()
+        _log_readonly("capture_screenshot")
         return json.dumps(
             {
                 "format": "png",
