@@ -355,6 +355,7 @@ class GetConnectionEdgeTests(unittest.TestCase):
         with self.assertRaises(ConnectionError) as ctx:
             server_module.get_paraview_connection()
         self.assertIn("Could not connect", str(ctx.exception))
+        self.assertIsNone(server_module._connection)
 
 
 if __name__ == "__main__":
