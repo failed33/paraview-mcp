@@ -1,16 +1,21 @@
-# Stage 1: Build dependencies
-FROM ubuntu:24.04 AS base
+# =============================================================================
+# Stage 1: Build ParaView from source
+# This layer is expensive (~30 min) and cached independently. It only
+# invalidates when the base image, Qt version, or ParaView version changes.
+# =============================================================================
+FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
+ARG PARAVIEW_VERSION=v6.0.1
+
+# Build-time dependencies only (not carried to runtime image)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     ninja-build \
     git \
-    wget \
     ca-certificates \
     python3-dev \
-    python3-pip \
     libgl1-mesa-dev \
     libosmesa6-dev \
     libglvnd-dev \
@@ -27,12 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libqt6opengl6-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Stage 2: Build ParaView from source
-FROM base AS builder
-
-ARG PARAVIEW_VERSION=v6.0.1
 WORKDIR /src
-
 RUN git clone --recursive --branch ${PARAVIEW_VERSION} --depth 1 \
     https://gitlab.kitware.com/paraview/paraview.git
 
@@ -53,13 +53,17 @@ RUN cmake -S /src/paraview -B . \
     && cmake --build . --parallel $(nproc) \
     && cmake --install .
 
-# Stage 3: Runtime SDK image
+# =============================================================================
+# Stage 2: Runtime SDK image
+# Changes here (adding tools, packages) do NOT rebuild ParaView.
+# =============================================================================
 FROM ubuntu:24.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Runtime libraries (Qt6, GL, X11) + dev tools for plugin builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ninja-build \
     build-essential \
+    ninja-build \
     python3-dev \
     python3-pip \
     libgl1-mesa-dev \

@@ -29,5 +29,5 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}-ci:6.0.1
             ghcr.io/${{ github.repository }}-ci:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}-ci:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}-ci:buildcache,mode=max
