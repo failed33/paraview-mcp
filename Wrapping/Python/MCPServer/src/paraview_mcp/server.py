@@ -187,6 +187,12 @@ class ParaViewConnection:
 
 _connection: ParaViewConnection | None = None
 
+_SETUP_HINT = (
+    "Ensure the ParaView MCP plugin is installed, loaded, and its server is "
+    "running before using this tool.\n"
+    "See: https://github.com/failed33/paraview-mcp#set-up-the-paraview-plugin"
+)
+
 
 def get_paraview_connection() -> ParaViewConnection:
     """Return a validated singleton connection."""
@@ -206,7 +212,13 @@ def get_paraview_connection() -> ParaViewConnection:
     auth_token = os.getenv("PARAVIEW_AUTH_TOKEN", "")
 
     _connection = ParaViewConnection(host=host, port=port, auth_token=auth_token)
-    _connection.connect()
+    try:
+        _connection.connect()
+    except OSError as exc:
+        _connection = None
+        raise ConnectionError(
+            f"Could not connect to the ParaView MCP bridge at {host}:{port}: {exc}\n\n{_SETUP_HINT}"
+        ) from exc
     return _connection
 
 
