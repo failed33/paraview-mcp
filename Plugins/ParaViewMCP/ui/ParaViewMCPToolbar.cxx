@@ -4,6 +4,9 @@
 #include "ParaViewMCPStateAppearance.h"
 #include "bridge/ParaViewMCPBridgeController.h"
 
+#include <pqCoreUtilities.h>
+
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -34,7 +37,6 @@ void ParaViewMCPToolbar::constructor()
   layout->setSpacing(2);
 
   this->Button = new QToolButton(this->Container);
-  this->Button->setIcon(QIcon(QStringLiteral(":/ParaViewMCP/mcp-icon.png")));
   this->Button->setToolButtonStyle(Qt::ToolButtonIconOnly);
   this->Button->setAutoRaise(true);
   layout->addWidget(this->Button);
@@ -45,6 +47,7 @@ void ParaViewMCPToolbar::constructor()
 
   this->addWidget(this->Container);
 
+  this->updateIcon();
   this->updateButtonAppearance();
 
   QObject::connect(this->Button,
@@ -67,6 +70,24 @@ void ParaViewMCPToolbar::constructor()
                    this,
                    [this](ParaViewMCPBridgeController::ServerState /*state*/)
                    { this->updateButtonAppearance(); });
+}
+
+void ParaViewMCPToolbar::changeEvent(QEvent* event)
+{
+  QToolBar::changeEvent(event);
+  if (event->type() == QEvent::PaletteChange)
+  {
+    this->updateIcon();
+  }
+}
+
+void ParaViewMCPToolbar::updateIcon()
+{
+  // Light icon (white) for dark themes, dark icon (black) for light themes
+  const QString iconPath = pqCoreUtilities::isDarkTheme()
+                             ? QStringLiteral(":/ParaViewMCP/mcp-icon-light.png")
+                             : QStringLiteral(":/ParaViewMCP/mcp-icon-dark.png");
+  this->Button->setIcon(QIcon(iconPath));
 }
 
 void ParaViewMCPToolbar::updateButtonAppearance()

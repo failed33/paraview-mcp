@@ -16,9 +16,13 @@ public:
   ParaViewMCPToolbar(QWidget* parent = nullptr);
   ~ParaViewMCPToolbar() override;
 
+protected:
+  void changeEvent(QEvent* event) override;
+
 private:
   void constructor();
   void updateButtonAppearance();
+  void updateIcon();
 
   QToolButton* Button = nullptr;
   QLabel* StatusDot = nullptr;

@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/ParaViewMCP">
     <file alias="mcp-icon.png">mcp-icon.png</file>
+    <file alias="mcp-icon-dark.png">mcp-icon-dark.png</file>
+    <file alias="mcp-icon-light.png">mcp-icon-light.png</file>
   </qresource>
 </RCC>
