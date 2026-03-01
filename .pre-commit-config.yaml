@@ -48,10 +48,10 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
-      - id: license-allowlist
-        name: license-allowlist
+      - id: license-notices
+        name: license-notices
         language: system
-        entry: bash -c 'cd Wrapping/Python/MCPServer && uv run pip-licenses --ignore-packages pyrefly ruff pip-licenses licensecheck coverage pytest pytest-cov pluggy iniconfig packaging --allow-only="MIT;MIT License;BSD-3-Clause;BSD-2-Clause;BSD License;Apache-2.0;Apache Software License;Apache-2.0 OR BSD-3-Clause;Apache-2.0 OR BSD-2-Clause;Apache Software License; MIT License;ISC License (ISCL);PSF-2.0;Mozilla Public License 2.0 (MPL 2.0)" > /dev/null'
+        entry: uv run --project Wrapping/Python/MCPServer scripts/update-notices.py --check
         pass_filenames: false
         always_run: true
         stages: [pre-push]

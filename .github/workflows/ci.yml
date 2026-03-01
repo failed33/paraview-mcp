@@ -47,12 +47,9 @@ jobs:
       - run: uv run pytest
       - name: Check license compatibility
         run: uv run licensecheck -r pyproject.toml --zero
-      - name: Validate allowed licenses
-        run: >-
-          uv run pip-licenses
-          --ignore-packages pyrefly ruff pip-licenses licensecheck coverage
-          pytest pytest-cov pluggy iniconfig packaging
-          --allow-only="MIT;MIT License;BSD-3-Clause;BSD-2-Clause;BSD License;Apache-2.0;Apache Software License;Apache-2.0 OR BSD-3-Clause;Apache-2.0 OR BSD-2-Clause;Apache Software License; MIT License;ISC License (ISCL);PSF-2.0;Mozilla Public License 2.0 (MPL 2.0)"
+      - name: Verify third-party notices are current
+        run: uv run --project Wrapping/Python/MCPServer scripts/update-notices.py --check
+        working-directory: .
 
   cpp:
     runs-on: ubuntu-latest
