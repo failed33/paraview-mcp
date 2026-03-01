@@ -18,8 +18,10 @@ set(paraview_mcp_plugin_sources
   lifecycle/ParaViewMCPAutoStart.h
   ui/ParaViewMCPActionGroup.cxx
   ui/ParaViewMCPActionGroup.h
-  ui/ParaViewMCPDockWindow.cxx
-  ui/ParaViewMCPDockWindow.h
+  ui/ParaViewMCPPopup.cxx
+  ui/ParaViewMCPPopup.h
+  ui/ParaViewMCPToolbar.cxx
+  ui/ParaViewMCPToolbar.h
 )
 
 set(paraview_mcp_lint_sources
@@ -29,7 +31,8 @@ set(paraview_mcp_lint_sources
   bridge/ParaViewMCPPythonBridge.cxx
   lifecycle/ParaViewMCPAutoStart.cxx
   ui/ParaViewMCPActionGroup.cxx
-  ui/ParaViewMCPDockWindow.cxx
+  ui/ParaViewMCPPopup.cxx
+  ui/ParaViewMCPToolbar.cxx
 )
 
 set(paraview_mcp_all_sources
@@ -40,14 +43,13 @@ set(paraview_mcp_all_sources
 set(paraview_mcp_ui_interfaces)
 set(paraview_mcp_ui_sources)
 
-paraview_plugin_add_dock_window(
-  CLASS_NAME ParaViewMCPDockWindow
-  DOCK_AREA Right
-  INTERFACES paraview_mcp_dock_interfaces
-  SOURCES paraview_mcp_dock_wrapper_sources
+paraview_plugin_add_toolbar(
+  CLASS_NAME ParaViewMCPToolbar
+  INTERFACES paraview_mcp_toolbar_interfaces
+  SOURCES paraview_mcp_toolbar_wrapper_sources
 )
-list(APPEND paraview_mcp_ui_interfaces ${paraview_mcp_dock_interfaces})
-list(APPEND paraview_mcp_ui_sources ${paraview_mcp_dock_wrapper_sources})
+list(APPEND paraview_mcp_ui_interfaces ${paraview_mcp_toolbar_interfaces})
+list(APPEND paraview_mcp_ui_sources ${paraview_mcp_toolbar_wrapper_sources})
 
 paraview_plugin_add_action_group(
   CLASS_NAME ParaViewMCPActionGroup
