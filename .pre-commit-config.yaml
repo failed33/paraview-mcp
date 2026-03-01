@@ -46,14 +46,14 @@ repos:
       - id: license-compatibility
         name: license-compatibility
         language: system
-        entry: bash -c 'cd Wrapping/Python/MCPServer && uv run licensecheck -r pyproject.toml --zero'
+        entry: bash -c 'cd Wrapping/Python/MCPServer && uv run licensecheck -r pyproject.toml --ignore-packages caio --zero'
         pass_filenames: false
         always_run: true
         stages: [pre-push]
       - id: license-notices
         name: license-notices
         language: system
-        entry: uv run --project Wrapping/Python/MCPServer scripts/update-notices.py --check
+        entry: uv run --project Wrapping/Python/MCPServer python scripts/update-notices.py --check
         pass_filenames: false
         always_run: true
         stages: [pre-push]

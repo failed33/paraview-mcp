@@ -4,6 +4,9 @@
 Concatenates the static C++ header (scripts/notices-header.txt) with an
 auto-generated Python section produced by pip-licenses.
 
+Only runtime dependencies are included — dev-only packages are excluded
+by resolving the runtime dependency tree via ``uv pip compile``.
+
 Usage:
     uv run scripts/update-notices.py          # regenerate the file
     uv run scripts/update-notices.py --check  # exit 1 if file is stale
@@ -21,53 +24,33 @@ HEADER = ROOT / "scripts" / "notices-header.txt"
 OUTPUT = ROOT / "THIRD-PARTY-NOTICES.txt"
 MCPSERVER = ROOT / "Wrapping" / "Python" / "MCPServer"
 
-# Packages that are dev-only tooling and not distributed with the package.
-DEV_PACKAGES = frozenset(
-    {
-        "coverage",
-        "iniconfig",
-        "licensecheck",
-        "packaging",
-        "pip-licenses",
-        "pluggy",
-        "pyrefly",
-        "pytest",
-        "pytest-cov",
-        "ruff",
-    }
-)
+SELF_PACKAGES = frozenset({"paraview-mcp-server", "paraview-mcp"})
 
-# Packages that are transitive deps of dev-only tools, not of mcp[cli].
-# This list is intentionally conservative — when in doubt, include the package.
-DEV_TRANSITIVE = frozenset(
-    {
-        "appdirs",
-        "boolean.py",
-        "cattrs",
-        "charset-normalizer",
-        "fhconfparser",
-        "license-expression",
-        "licensecheck",
-        "loguru",
-        "Markdown",
-        "platformdirs",
-        "prettytable",
-        "requests",
-        "requests-cache",
-        "requirements-parser",
-        "tomli",
-        "url-normalize",
-        "urllib3",
-        "uv",
-        "wcwidth",
-    }
-)
 
-SKIP = DEV_PACKAGES | DEV_TRANSITIVE
+def _get_runtime_package_names() -> set[str]:
+    """Resolve the runtime dependency tree and return normalized names."""
+    result = subprocess.run(
+        ["uv", "pip", "compile", "pyproject.toml", "--no-header", "--quiet"],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=MCPSERVER,
+    )
+    names: set[str] = set()
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # Lines look like "package==1.2.3" or "    # via ..."
+        if "==" in line:
+            names.add(line.split("==")[0].strip().lower())
+    return names
 
 
 def get_python_licenses() -> list[dict[str, str]]:
-    """Run pip-licenses and return license data for runtime packages."""
+    """Run pip-licenses and return license data for runtime packages only."""
+    runtime_names = _get_runtime_package_names()
+
     result = subprocess.run(
         [
             "uv",
@@ -87,8 +70,7 @@ def get_python_licenses() -> list[dict[str, str]]:
         [
             p
             for p in packages
-            if p["Name"] not in SKIP
-            and p["Name"] not in ("paraview-mcp-server", "paraview-mcp")
+            if p["Name"].lower() in runtime_names and p["Name"] not in SELF_PACKAGES
         ],
         key=lambda p: p["Name"].lower(),
     )
