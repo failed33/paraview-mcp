@@ -46,6 +46,27 @@ jobs:
           packages-dir: Wrapping/Python/MCPServer/dist
 
   # ---------------------------------------------------------------------------
+  # Publish server metadata to the MCP Registry (after PyPI is live)
+  # ---------------------------------------------------------------------------
+  publish-mcp-registry:
+    needs: [release-please, publish-pypi]
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish
+
+  # ---------------------------------------------------------------------------
   # Linux x86_64 — built inside the project CI container (Qt6)
   # ---------------------------------------------------------------------------
   build-plugin-linux:
