@@ -22,6 +22,8 @@ public:
   bool inspectPipeline(QJsonObject* result, QString* error = nullptr) override;
   bool
   captureScreenshot(int width, int height, QJsonObject* result, QString* error = nullptr) override;
+  bool getHistory(QJsonArray* result, QString* error = nullptr) override;
+  bool restoreSnapshot(int entryId, QJsonObject* result, QString* error = nullptr) override;
 
 private:
   bool importModule(QString* error);

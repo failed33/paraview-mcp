@@ -15,6 +15,7 @@
 #endif
 
 #include <QByteArray>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QString>
@@ -182,6 +183,83 @@ bool ParaViewMCPPythonBridge::captureScreenshot(int width,
   return ok;
 }
 
+bool ParaViewMCPPythonBridge::getHistory(QJsonArray* result, QString* error)
+{
+  if (!this->initialize(error))
+  {
+    return false;
+  }
+
+  PyGILState_STATE gilState = PyGILState_Ensure();
+
+  PyObject* callable = this->Functions.value(QStringLiteral("get_history"), nullptr);
+  if (callable == nullptr)
+  {
+    if (error)
+    {
+      *error = QStringLiteral("get_history function not available");
+    }
+    PyGILState_Release(gilState);
+    return false;
+  }
+
+  PyObject* args = PyTuple_New(0);
+  PyObject* value = PyObject_CallObject(callable, args);
+  Py_XDECREF(args);
+  if (value == nullptr)
+  {
+    if (error)
+    {
+      *error = this->fetchPythonError();
+    }
+    PyGILState_Release(gilState);
+    return false;
+  }
+
+  if (!PyUnicode_Check(value))
+  {
+    Py_DECREF(value);
+    if (error)
+    {
+      *error = QStringLiteral("get_history did not return a string");
+    }
+    PyGILState_Release(gilState);
+    return false;
+  }
+
+  const char* utf8 = PyUnicode_AsUTF8(value);
+  QJsonParseError parseError;
+  const QJsonDocument document = QJsonDocument::fromJson(QByteArray(utf8), &parseError);
+  Py_DECREF(value);
+  PyGILState_Release(gilState);
+
+  if (parseError.error != QJsonParseError::NoError || !document.isArray())
+  {
+    if (error)
+    {
+      *error = QStringLiteral("get_history returned invalid JSON array");
+    }
+    return false;
+  }
+
+  *result = document.array();
+  return true;
+}
+
+bool ParaViewMCPPythonBridge::restoreSnapshot(int entryId, QJsonObject* result, QString* error)
+{
+  if (!this->initialize(error))
+  {
+    return false;
+  }
+
+  PyGILState_STATE gilState = PyGILState_Ensure();
+  PyObject* args = Py_BuildValue("(i)", entryId);
+  const bool ok = this->callFunction(QStringLiteral("restore_snapshot"), args, result, error);
+  PyGILState_Release(gilState);
+  return ok;
+}
+
 bool ParaViewMCPPythonBridge::importModule(QString* error)
 {
   if (this->Module != nullptr)
@@ -222,6 +300,8 @@ bool ParaViewMCPPythonBridge::cacheFunctions(QString* error)
     "execute_python",
     "inspect_pipeline",
     "capture_screenshot",
+    "get_history",
+    "restore_snapshot",
   };
 
   for (const char* functionName : functionNames)
