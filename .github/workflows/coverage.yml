@@ -65,7 +65,7 @@ jobs:
       - name: Generate lcov report
         run: |
           lcov --capture --directory build --output-file build/coverage.info --no-external
-          lcov --remove build/coverage.info '*/Testing/*' '*/ThirdParty/*' --output-file build/cpp_coverage.lcov
+          lcov --remove build/coverage.info '*/Testing/*' --output-file build/cpp_coverage.lcov
       - name: Upload C++ coverage
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
