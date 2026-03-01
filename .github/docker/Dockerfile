@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qt6-base-dev \
     qt6-tools-dev \
     qt6-tools-dev-tools \
+    qt6-5compat-dev \
     libqt6svg6-dev \
     libqt6opengl6-dev \
     && rm -rf /var/lib/apt/lists/*
