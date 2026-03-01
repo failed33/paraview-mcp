@@ -39,6 +39,8 @@ dev = [
     "pyrefly>=0.54.0,<0.55",
     "pytest",
     "pytest-cov",
+    "pip-licenses>=5.0",
+    "licensecheck>=2025.1",
 ]
 
 [tool.ruff]

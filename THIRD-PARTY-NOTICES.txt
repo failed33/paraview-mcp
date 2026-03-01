@@ -1,0 +1,179 @@
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+
+This project incorporates components from the projects listed below.
+The original copyright notices and license terms are provided below.
+
+ParaView MCP itself is licensed under the MIT License.
+See the LICENSE file in the root of this repository for details.
+
+========================================================================
+ParaView (BSD-3-Clause)
+========================================================================
+
+https://www.paraview.org/
+https://github.com/Kitware/ParaView
+
+Copyright (c) 2000 Kitware Inc.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list
+  of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or
+  other materials provided with the distribution.
+
+* Neither the name of Kitware nor the names of any contributors may be used to
+  endorse or promote products derived from this software without specific prior
+  written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+========================================================================
+Visualization Toolkit — VTK (BSD-3-Clause)
+========================================================================
+
+https://vtk.org/
+https://github.com/Kitware/VTK
+
+Copyright (c) 1993-2015 Ken Martin, Will Schroeder, Bill Lorensen
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+ * Neither name of Ken Martin, Will Schroeder, or Bill Lorensen nor the names
+   of any contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+========================================================================
+Qt Framework (LGPL-3.0)
+========================================================================
+
+https://www.qt.io/
+https://code.qt.io/
+
+Copyright (C) The Qt Company Ltd.
+
+This software dynamically links against the Qt framework (Widgets and
+Network modules), which is licensed under the GNU Lesser General Public
+License version 3 (LGPL-3.0).
+
+The complete text of the LGPL-3.0 is provided in LICENSES/LGPL-3.0.txt.
+The complete text of the GPL-3.0, referenced by the LGPL-3.0, is provided
+in LICENSES/GPL-3.0.txt.
+
+In accordance with LGPL-3.0 Section 4, this software uses dynamic linking
+so that users may substitute a modified, interface-compatible version of
+the Qt libraries.
+
+Qt source code is available from https://code.qt.io/ and
+https://www.qt.io/download-open-source.
+
+========================================================================
+Python Dependencies
+========================================================================
+
+The paraview-mcp-server Python package depends on the following
+libraries, all distributed under permissive licenses.
+
+------------------------------------------------------------------------
+mcp — Model Context Protocol SDK (MIT)
+------------------------------------------------------------------------
+Copyright (c) Anthropic, PBC
+https://github.com/modelcontextprotocol/python-sdk
+
+------------------------------------------------------------------------
+pydantic (MIT)
+------------------------------------------------------------------------
+Copyright (c) Samuel Colvin and other contributors
+https://github.com/pydantic/pydantic
+
+------------------------------------------------------------------------
+httpx (BSD-3-Clause)
+------------------------------------------------------------------------
+Copyright (c) Encode OSS Ltd.
+https://github.com/encode/httpx
+
+------------------------------------------------------------------------
+uvicorn (BSD-3-Clause)
+------------------------------------------------------------------------
+Copyright (c) Encode OSS Ltd.
+https://github.com/encode/uvicorn
+
+------------------------------------------------------------------------
+starlette (BSD-3-Clause)
+------------------------------------------------------------------------
+Copyright (c) Encode OSS Ltd.
+https://github.com/encode/starlette
+
+------------------------------------------------------------------------
+click (BSD-3-Clause)
+------------------------------------------------------------------------
+Copyright (c) Pallets Projects
+https://github.com/pallets/click
+
+------------------------------------------------------------------------
+anyio (MIT)
+------------------------------------------------------------------------
+Copyright (c) Alex Gronholm
+https://github.com/agronholm/anyio
+
+------------------------------------------------------------------------
+certifi (MPL-2.0)
+------------------------------------------------------------------------
+Copyright (c) Kenneth Reitz
+https://github.com/certifi/python-certifi
+
+------------------------------------------------------------------------
+cryptography (Apache-2.0 OR BSD-3-Clause)
+------------------------------------------------------------------------
+Copyright (c) Individual contributors
+https://github.com/pyca/cryptography
+
+------------------------------------------------------------------------
+PyJWT (MIT)
+------------------------------------------------------------------------
+Copyright (c) Jose Padilla
+https://github.com/jpadilla/pyjwt
+
+------------------------------------------------------------------------
+typer (MIT)
+------------------------------------------------------------------------
+Copyright (c) Sebastian Ramirez
+https://github.com/fastapi/typer
+
+------------------------------------------------------------------------
+rich (MIT)
+------------------------------------------------------------------------
+Copyright (c) Will McGugan
+https://github.com/Textualize/rich

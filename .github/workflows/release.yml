@@ -87,6 +87,8 @@ jobs:
           cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
           cp install/lib/paraview-6.0/plugins/ParaViewMCP.plugins.xml "${ARCHIVE_DIR}/"
           cp source/LICENSE "${ARCHIVE_DIR}/"
+          cp source/THIRD-PARTY-NOTICES.txt "${ARCHIVE_DIR}/"
+          cp -r source/LICENSES "${ARCHIVE_DIR}/"
           cp source/.github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
           tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
           echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
@@ -173,6 +175,8 @@ jobs:
           cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
           cp install/lib/paraview-6.0/plugins/ParaViewMCP.plugins.xml "${ARCHIVE_DIR}/"
           cp LICENSE "${ARCHIVE_DIR}/"
+          cp THIRD-PARTY-NOTICES.txt "${ARCHIVE_DIR}/"
+          cp -r LICENSES "${ARCHIVE_DIR}/"
           cp .github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
           tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
           echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
