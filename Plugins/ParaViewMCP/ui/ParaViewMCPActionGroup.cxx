@@ -10,7 +10,6 @@ ParaViewMCPActionGroup::ParaViewMCPActionGroup(QObject* parent) : QActionGroup(p
   auto* action = new QAction(
     QIcon(QStringLiteral(":/ParaViewMCP/mcp-icon.png")), QStringLiteral("ParaView MCP"), this);
   this->addAction(action);
-  QObject::connect(action,
-                   &QAction::triggered,
-                   []() { ParaViewMCPBridgeController::instance().showDockWindow(); });
+  QObject::connect(
+    action, &QAction::triggered, []() { ParaViewMCPBridgeController::instance().showPopup(); });
 }
