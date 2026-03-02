@@ -50,10 +50,9 @@ ParaViewMCPHistoryEntry::ParaViewMCPHistoryEntry(const QJsonObject& entry, QWidg
   this->ExpandToggle->setFixedSize(16, 16);
   headerRow->addWidget(this->ExpandToggle);
 
-  const QString statusIcon =
-    isError ? QStringLiteral("\xe2\x9c\x97") : QStringLiteral("\xe2\x9c\x93");
+  const QString statusText = isError ? QStringLiteral("ERR") : QStringLiteral("OK");
   const QString headerText =
-    QStringLiteral("#%1 %2  %3  %4").arg(this->EntryId).arg(command, timestamp, statusIcon);
+    QStringLiteral("#%1 %2  %3  [%4]").arg(this->EntryId).arg(command, timestamp, statusText);
   this->HeaderLabel = new QLabel(headerText, this);
   this->HeaderLabel->setTextFormat(Qt::PlainText);
   headerRow->addWidget(this->HeaderLabel, 1);
