@@ -29,6 +29,7 @@ public:
 private:
   Result handleHello(const QJsonObject& message, const QString& authToken);
   Result handleCommand(const QJsonObject& message);
+  void attachHistoryJson(Result& result);
 
   static Result success(const QString& requestId, const QJsonObject& result);
   static Result error(const QString& requestId,

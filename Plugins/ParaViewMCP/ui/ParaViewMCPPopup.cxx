@@ -224,12 +224,13 @@ void ParaViewMCPPopup::onHistoryChanged(const QString& historyJson)
 
 void ParaViewMCPPopup::onRestoreRequested(int entryId)
 {
-  const auto answer =
-    QMessageBox::question(this,
-                          QStringLiteral("Restore Snapshot"),
-                          QStringLiteral("Restore pipeline state to entry #%1?").arg(entryId),
-                          QMessageBox::Yes | QMessageBox::No,
-                          QMessageBox::No);
+  const auto answer = QMessageBox::question(this,
+                                            QStringLiteral("Restore Snapshot"),
+                                            QStringLiteral("Restore pipeline to before step #%1?\n"
+                                                           "This will remove all later history.")
+                                              .arg(entryId),
+                                            QMessageBox::Yes | QMessageBox::No,
+                                            QMessageBox::No);
   if (answer == QMessageBox::Yes)
   {
     ParaViewMCPBridgeController::instance().restoreSnapshot(entryId);

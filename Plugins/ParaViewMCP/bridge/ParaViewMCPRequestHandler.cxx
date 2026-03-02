@@ -151,13 +151,7 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
     }
 
     Result handlerResult = ParaViewMCPRequestHandler::success(requestId, result);
-
-    QJsonArray historyArray;
-    if (this->PythonBridge.getHistory(&historyArray, nullptr))
-    {
-      handlerResult.HistoryJson =
-        QString::fromUtf8(QJsonDocument(historyArray).toJson(QJsonDocument::Compact));
-    }
+    this->attachHistoryJson(handlerResult);
     return handlerResult;
   }
 
@@ -173,7 +167,9 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
         errorText.isEmpty() ? QStringLiteral("Unable to inspect the pipeline") : errorText);
     }
 
-    return ParaViewMCPRequestHandler::success(requestId, result);
+    Result handlerResult = ParaViewMCPRequestHandler::success(requestId, result);
+    this->attachHistoryJson(handlerResult);
+    return handlerResult;
   }
 
   if (type == QStringLiteral("capture_screenshot"))
@@ -190,7 +186,9 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
         errorText.isEmpty() ? QStringLiteral("Unable to capture a screenshot") : errorText);
     }
 
-    return ParaViewMCPRequestHandler::success(requestId, result);
+    Result handlerResult = ParaViewMCPRequestHandler::success(requestId, result);
+    this->attachHistoryJson(handlerResult);
+    return handlerResult;
   }
 
   if (type == QStringLiteral("get_history"))
@@ -233,7 +231,9 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
         errorText.isEmpty() ? QStringLiteral("Unable to restore snapshot") : errorText);
     }
 
-    return ParaViewMCPRequestHandler::success(requestId, result);
+    Result handlerResult = ParaViewMCPRequestHandler::success(requestId, result);
+    this->attachHistoryJson(handlerResult);
+    return handlerResult;
   }
 
   return ParaViewMCPRequestHandler::error(requestId,
@@ -274,4 +274,14 @@ ParaViewMCPRequestHandler::Result ParaViewMCPRequestHandler::error(const QString
     {"error", errorObject},
   };
   return response;
+}
+
+void ParaViewMCPRequestHandler::attachHistoryJson(Result& result)
+{
+  QJsonArray historyArray;
+  if (this->PythonBridge.getHistory(&historyArray, nullptr))
+  {
+    result.HistoryJson =
+      QString::fromUtf8(QJsonDocument(historyArray).toJson(QJsonDocument::Compact));
+  }
 }
