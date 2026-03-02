@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.0](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.5...ParaViewMCP-v0.2.0) (2026-03-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **plugin:** The dock widget (ParaViewMCPDockWindow) has been removed in favor of the new toolbar popup. Users who had the dock pinned will find the MCP controls in the toolbar instead.
+
+### Features
+
+* migrate from mcp SDK to FastMCP v3 and expand test coverage to 98% ([fa3f30d](https://github.com/failed33/paraview-mcp/commit/fa3f30d482510422e3bca9b479fcc8eb50f94cba))
+* **plugin:** add toolbar popup UI with execution history and snapshot restore ([f90c4ed](https://github.com/failed33/paraview-mcp/commit/f90c4eddcdecbe1c32fd82c01057d383f6b0f8fd))
+* **plugin:** add toolbar popup UI with execution history and snapshot restore ([d1ff4c7](https://github.com/failed33/paraview-mcp/commit/d1ff4c729aa2ffd3c8b78c4d416d32afcb994b3b))
+
+
+### Bug Fixes
+
+* add missing _connection null assertion in get_connection edge test ([68529ff](https://github.com/failed33/paraview-mcp/commit/68529fffecef8934d0b5725e35262b0beb4f7925))
+
+
+### Documentation
+
+* add combined ParaView + MCP logo to README ([76bd334](https://github.com/failed33/paraview-mcp/commit/76bd33493da52af8296aad0f31bd00faca6da86a))
+* **server:** regenerate third-party notices for FastMCP v3 ([4828f23](https://github.com/failed33/paraview-mcp/commit/4828f2300a5438b44dd7c73e8297d6e05a60bfa4))
+
 ## [0.1.5](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.4...ParaViewMCP-v0.1.5) (2026-03-01)
 
 

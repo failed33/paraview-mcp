@@ -3,7 +3,7 @@
   "name": "io.github.failed33/paraview-mcp-server",
   "title": "ParaView MCP Server",
   "description": "Control ParaView through arbitrary Python code",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "repository": {
     "url": "https://github.com/failed33/paraview-mcp",
     "source": "github"
@@ -12,7 +12,7 @@
     {
       "registryType": "pypi",
       "identifier": "paraview-mcp-server",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "transport": {
         "type": "stdio"
       }
