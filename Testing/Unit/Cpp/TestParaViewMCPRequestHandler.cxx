@@ -2,6 +2,7 @@
 #include "ParaViewMCPProtocol.h"
 #include "ParaViewMCPRequestHandler.h"
 
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QObject>
 #include <QtTest>
@@ -21,6 +22,13 @@ private slots:
   void propagatesBridgeFailures();
   void handlesPipelineAndScreenshotCommands();
   void rejectsUnknownCommands();
+  void getHistoryReturnsHistoryArray();
+  void restoreSnapshotValidatesEntryId();
+  void restoreSnapshotPassesThroughResult();
+  void restoreSnapshotBridgeFailure();
+  void executePythonAttachesHistoryJson();
+  void inspectPipelineAttachesHistoryJson();
+  void captureScreenshotAttachesHistoryJson();
 };
 
 void TestParaViewMCPRequestHandler::handshakeSucceeds()
@@ -274,6 +282,198 @@ void TestParaViewMCPRequestHandler::rejectsUnknownCommands()
              .value(QStringLiteral("code"))
              .toString(),
            QStringLiteral("UNKNOWN_COMMAND"));
+}
+
+void TestParaViewMCPRequestHandler::getHistoryReturnsHistoryArray()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  bridge.HistoryPayload = QJsonArray{
+    QJsonObject{{"id", 1}, {"command", QStringLiteral("execute_python")}},
+    QJsonObject{{"id", 2}, {"command", QStringLiteral("inspect_pipeline")}},
+  };
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("hist-1")},
+      {"type", QStringLiteral("get_history")},
+      {"params", QJsonObject()},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
+  const QJsonArray history = result.Response.value(QStringLiteral("result"))
+                               .toObject()
+                               .value(QStringLiteral("history"))
+                               .toArray();
+  QCOMPARE(history.size(), 2);
+  QCOMPARE(history[0].toObject().value(QStringLiteral("id")).toInt(), 1);
+  QCOMPARE(history[1].toObject().value(QStringLiteral("id")).toInt(), 2);
+  QVERIFY(!result.HistoryJson.isEmpty());
+}
+
+void TestParaViewMCPRequestHandler::restoreSnapshotValidatesEntryId()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  ParaViewMCPRequestHandler handler(bridge);
+
+  // Missing entry_id
+  auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("restore-1")},
+      {"type", QStringLiteral("restore_snapshot")},
+      {"params", QJsonObject()},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("code"))
+             .toString(),
+           QStringLiteral("INVALID_PARAMS"));
+
+  // Zero entry_id
+  result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("restore-2")},
+      {"type", QStringLiteral("restore_snapshot")},
+      {"params", QJsonObject{{"entry_id", 0}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("code"))
+             .toString(),
+           QStringLiteral("INVALID_PARAMS"));
+
+  // Negative entry_id
+  result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("restore-3")},
+      {"type", QStringLiteral("restore_snapshot")},
+      {"params", QJsonObject{{"entry_id", -5}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("code"))
+             .toString(),
+           QStringLiteral("INVALID_PARAMS"));
+}
+
+void TestParaViewMCPRequestHandler::restoreSnapshotPassesThroughResult()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("restore-1")},
+      {"type", QStringLiteral("restore_snapshot")},
+      {"params", QJsonObject{{"entry_id", 3}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(bridge.LastRestoreEntryId, 3);
+  QCOMPARE(result.Response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
+  QVERIFY(result.Response.value(QStringLiteral("result"))
+            .toObject()
+            .value(QStringLiteral("ok"))
+            .toBool());
+  QVERIFY(!result.HistoryJson.isEmpty());
+}
+
+void TestParaViewMCPRequestHandler::restoreSnapshotBridgeFailure()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  bridge.RestoreResult = false;
+  bridge.RestoreError = QStringLiteral("snapshot not found");
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("restore-1")},
+      {"type", QStringLiteral("restore_snapshot")},
+      {"params", QJsonObject{{"entry_id", 1}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("code"))
+             .toString(),
+           QStringLiteral("RESTORE_ERROR"));
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("message"))
+             .toString(),
+           QStringLiteral("snapshot not found"));
+}
+
+void TestParaViewMCPRequestHandler::executePythonAttachesHistoryJson()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  bridge.HistoryPayload = QJsonArray{QJsonObject{{"id", 1}}};
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("exec-1")},
+      {"type", QStringLiteral("execute_python")},
+      {"params", QJsonObject{{"code", QStringLiteral("x = 1")}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
+  QVERIFY(!result.HistoryJson.isEmpty());
+  QVERIFY(result.HistoryJson.contains(QStringLiteral("\"id\":1")));
+}
+
+void TestParaViewMCPRequestHandler::inspectPipelineAttachesHistoryJson()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  bridge.HistoryPayload = QJsonArray{QJsonObject{{"id", 1}}};
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("inspect-1")},
+      {"type", QStringLiteral("inspect_pipeline")},
+      {"params", QJsonObject()},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
+  QVERIFY(!result.HistoryJson.isEmpty());
+}
+
+void TestParaViewMCPRequestHandler::captureScreenshotAttachesHistoryJson()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  bridge.HistoryPayload = QJsonArray{QJsonObject{{"id", 1}}};
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("shot-1")},
+      {"type", QStringLiteral("capture_screenshot")},
+      {"params", QJsonObject{{"width", 800}, {"height", 600}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(result.Response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
+  QVERIFY(!result.HistoryJson.isEmpty());
 }
 
 QTEST_APPLESS_MAIN(TestParaViewMCPRequestHandler)
