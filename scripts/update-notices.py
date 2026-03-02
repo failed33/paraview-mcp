@@ -5,7 +5,9 @@ Concatenates the static C++ header (scripts/notices-header.txt) with an
 auto-generated Python section produced by pip-licenses.
 
 Only runtime dependencies are included — dev-only packages are excluded
-by resolving the runtime dependency tree via ``uv pip compile``.
+by resolving the runtime dependency tree from the lockfile via ``uv export``.
+Platform-specific packages (with environment markers) are excluded so the
+output is identical on every OS.
 
 Usage:
     uv run scripts/update-notices.py          # regenerate the file
@@ -28,9 +30,14 @@ SELF_PACKAGES = frozenset({"paraview-mcp-server", "paraview-mcp"})
 
 
 def _get_runtime_package_names() -> set[str]:
-    """Resolve the runtime dependency tree and return normalized names."""
+    """Resolve the runtime dependency tree and return normalized names.
+
+    Uses ``uv export`` to read from the lockfile for deterministic resolution
+    across platforms.  Packages with environment markers (e.g. ``; sys_platform
+    == 'win32'``) are excluded so the output is identical on every OS.
+    """
     result = subprocess.run(
-        ["uv", "pip", "compile", "pyproject.toml", "--no-header", "--quiet"],
+        ["uv", "export", "--no-dev", "--no-hashes", "--no-header"],
         capture_output=True,
         text=True,
         check=True,
@@ -39,9 +46,11 @@ def _get_runtime_package_names() -> set[str]:
     names: set[str] = set()
     for line in result.stdout.splitlines():
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line or line.startswith("#") or line.startswith("-e"):
             continue
-        # Lines look like "package==1.2.3" or "    # via ..."
+        # Skip platform-specific packages (lines with environment markers)
+        if ";" in line:
+            continue
         if "==" in line:
             names.add(line.split("==")[0].strip().lower())
     return names
