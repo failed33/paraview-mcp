@@ -120,4 +120,26 @@ public:
     }
     return true;
   }
+
+  bool getHistory(QJsonArray* result, QString* /*error*/ = nullptr) override
+  {
+    if (result != nullptr)
+    {
+      *result = this->HistoryPayload;
+    }
+    return true;
+  }
+
+  bool restoreSnapshot(int entryId, QJsonObject* result, QString* /*error*/ = nullptr) override
+  {
+    this->LastRestoreEntryId = entryId;
+    if (result != nullptr)
+    {
+      *result = QJsonObject{{"ok", true}};
+    }
+    return true;
+  }
+
+  QJsonArray HistoryPayload;
+  int LastRestoreEntryId = 0;
 };
