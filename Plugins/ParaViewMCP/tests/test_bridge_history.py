@@ -166,3 +166,57 @@ def test_restore_calls_reset_session(_bridge) -> None:
     simple.ResetSession = MagicMock()
     bridge.restore_snapshot(1)
     simple.ResetSession.assert_called_once()
+
+
+def test_reset_session_clears_history(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    bridge.execute_python("y = 2")
+    assert len(json.loads(bridge.get_history())) == 2
+
+    bridge.reset_session()
+    assert json.loads(bridge.get_history()) == []
+
+
+def test_ids_reset_after_session_reset(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    bridge.execute_python("y = 2")
+
+    bridge.reset_session()
+    bridge.execute_python("z = 3")
+    history = json.loads(bridge.get_history())
+    assert len(history) == 1
+    assert history[0]["id"] == 1
+
+
+def test_get_history_excludes_snapshot_content(_bridge) -> None:
+    bridge = _bridge
+    bridge.bootstrap()
+    bridge.execute_python("x = 1")
+    history = json.loads(bridge.get_history())
+    entry = history[0]
+    assert "snapshot" not in entry
+    assert "has_snapshot" in entry
+    assert entry["has_snapshot"] is True
+
+
+def test_capture_screenshot_logged_in_history(_bridge) -> None:
+    import paraview.simple as simple
+
+    bridge = _bridge
+    bridge.bootstrap()
+
+    # Mock active view and SaveScreenshot so capture_screenshot succeeds
+    mock_view = MagicMock()
+    simple.GetActiveView = MagicMock(return_value=mock_view)
+    simple.SaveScreenshot = MagicMock()
+
+    bridge.capture_screenshot(800, 600)
+    history = json.loads(bridge.get_history())
+    assert len(history) == 1
+    assert history[0]["command"] == "capture_screenshot"
+    assert history[0]["code"] is None
+    assert history[0]["has_snapshot"] is False
