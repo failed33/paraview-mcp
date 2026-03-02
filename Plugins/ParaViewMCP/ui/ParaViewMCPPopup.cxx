@@ -1,15 +1,20 @@
 #include "ParaViewMCPPopup.h"
 
+#include "ParaViewMCPHistoryEntry.h"
 #include "ParaViewMCPStateAppearance.h"
 #include "bridge/ParaViewMCPBridgeController.h"
 
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QLabel>
 #include <QLineEdit>
-#include <QPlainTextEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QScreen>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSpinBox>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -66,21 +71,33 @@ ParaViewMCPPopup::ParaViewMCPPopup(QWidget* parent)
   buttonLayout->addWidget(this->StopButton);
   layout->addLayout(buttonLayout);
 
-  // --- Collapsible log ---
-  this->LogToggle = new QToolButton(this);
-  this->LogToggle->setArrowType(Qt::RightArrow);
-  this->LogToggle->setText(QStringLiteral(" Log"));
-  this->LogToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  this->LogToggle->setAutoRaise(true);
-  this->LogToggle->setCheckable(true);
-  layout->addWidget(this->LogToggle);
+  // --- Collapsible history ---
+  auto* historyHeaderRow = new QHBoxLayout();
+  this->HistoryToggle = new QToolButton(this);
+  this->HistoryToggle->setArrowType(Qt::RightArrow);
+  this->HistoryToggle->setText(QStringLiteral(" History"));
+  this->HistoryToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  this->HistoryToggle->setAutoRaise(true);
+  this->HistoryToggle->setCheckable(true);
+  historyHeaderRow->addWidget(this->HistoryToggle);
 
-  this->LogOutput = new QPlainTextEdit(this);
-  this->LogOutput->setReadOnly(true);
-  this->LogOutput->setMaximumBlockCount(200);
-  this->LogOutput->setFixedHeight(140);
-  this->LogOutput->setVisible(false);
-  layout->addWidget(this->LogOutput);
+  this->HistoryCountLabel = new QLabel(QStringLiteral("(0)"), this);
+  historyHeaderRow->addWidget(this->HistoryCountLabel);
+  historyHeaderRow->addStretch();
+  layout->addLayout(historyHeaderRow);
+
+  this->HistoryContainer = new QWidget();
+  this->HistoryLayout = new QVBoxLayout(this->HistoryContainer);
+  this->HistoryLayout->setContentsMargins(0, 0, 0, 0);
+  this->HistoryLayout->setSpacing(2);
+  this->HistoryLayout->addStretch();
+
+  this->HistoryScroll = new QScrollArea(this);
+  this->HistoryScroll->setWidgetResizable(true);
+  this->HistoryScroll->setWidget(this->HistoryContainer);
+  this->HistoryScroll->setFixedHeight(250);
+  this->HistoryScroll->setVisible(false);
+  layout->addWidget(this->HistoryScroll);
 
   // --- Connections ---
   ParaViewMCPBridgeController& controller = ParaViewMCPBridgeController::instance();
@@ -127,17 +144,17 @@ ParaViewMCPPopup::ParaViewMCPPopup(QWidget* parent)
                    });
 
   QObject::connect(&controller,
-                   &ParaViewMCPBridgeController::logChanged,
+                   &ParaViewMCPBridgeController::historyChanged,
                    this,
-                   [this](const QString& message) { this->LogOutput->setPlainText(message); });
+                   &ParaViewMCPPopup::onHistoryChanged);
 
-  QObject::connect(this->LogToggle,
+  QObject::connect(this->HistoryToggle,
                    &QToolButton::toggled,
                    this,
                    [this](bool checked)
                    {
-                     this->LogToggle->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
-                     this->LogOutput->setVisible(checked);
+                     this->HistoryToggle->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+                     this->HistoryScroll->setVisible(checked);
                      this->adjustSize();
                    });
 
@@ -176,7 +193,7 @@ void ParaViewMCPPopup::refreshFromController()
   this->HostField->setText(controller.host());
   this->PortField->setValue(static_cast<int>(controller.port()));
   this->TokenField->setText(controller.authToken());
-  this->LogOutput->setPlainText(controller.lastLog());
+  this->rebuildHistoryEntries(controller.lastHistory());
 
   const auto appearance = appearanceForState(controller.serverState());
   this->StatusDot->setStyleSheet(QStringLiteral("background-color: %1; border-radius: 5px;")
@@ -198,4 +215,62 @@ void ParaViewMCPPopup::syncState()
   this->TokenField->setEnabled(!listening);
   this->StartButton->setEnabled(!listening);
   this->StopButton->setEnabled(listening);
+}
+
+void ParaViewMCPPopup::onHistoryChanged(const QString& historyJson)
+{
+  this->rebuildHistoryEntries(historyJson);
+}
+
+void ParaViewMCPPopup::onRestoreRequested(int entryId)
+{
+  const auto answer =
+    QMessageBox::question(this,
+                          QStringLiteral("Restore Snapshot"),
+                          QStringLiteral("Restore pipeline state to entry #%1?").arg(entryId),
+                          QMessageBox::Yes | QMessageBox::No,
+                          QMessageBox::No);
+  if (answer == QMessageBox::Yes)
+  {
+    ParaViewMCPBridgeController::instance().restoreSnapshot(entryId);
+  }
+}
+
+void ParaViewMCPPopup::rebuildHistoryEntries(const QString& historyJson)
+{
+  // Remove existing entry widgets (keep the trailing stretch)
+  while (this->HistoryLayout->count() > 1)
+  {
+    QLayoutItem* item = this->HistoryLayout->takeAt(0);
+    if (item->widget() != nullptr)
+    {
+      delete item->widget();
+    }
+    delete item;
+  }
+
+  const QJsonDocument doc = QJsonDocument::fromJson(historyJson.toUtf8());
+  const QJsonArray entries = doc.array();
+
+  this->HistoryCountLabel->setText(QStringLiteral("(%1)").arg(entries.size()));
+
+  for (const QJsonValue& val : entries)
+  {
+    auto* entry = new ParaViewMCPHistoryEntry(val.toObject(), this->HistoryContainer);
+    QObject::connect(entry,
+                     &ParaViewMCPHistoryEntry::restoreRequested,
+                     this,
+                     &ParaViewMCPPopup::onRestoreRequested);
+    this->HistoryLayout->insertWidget(this->HistoryLayout->count() - 1, entry);
+  }
+
+  // Auto-scroll to bottom
+  QMetaObject::invokeMethod(
+    this,
+    [this]()
+    {
+      QScrollBar* bar = this->HistoryScroll->verticalScrollBar();
+      bar->setValue(bar->maximum());
+    },
+    Qt::QueuedConnection);
 }

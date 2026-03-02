@@ -4,10 +4,11 @@
 
 class QLabel;
 class QLineEdit;
-class QPlainTextEdit;
 class QPushButton;
+class QScrollArea;
 class QSpinBox;
 class QToolButton;
+class QVBoxLayout;
 
 class ParaViewMCPPopup : public QFrame
 {
@@ -21,6 +22,9 @@ public:
 
 private:
   void syncState();
+  void onHistoryChanged(const QString& historyJson);
+  void onRestoreRequested(int entryId);
+  void rebuildHistoryEntries(const QString& historyJson);
 
   QLabel* StatusDot = nullptr;
   QLabel* StatusText = nullptr;
@@ -29,6 +33,9 @@ private:
   QLineEdit* TokenField = nullptr;
   QPushButton* StartButton = nullptr;
   QPushButton* StopButton = nullptr;
-  QToolButton* LogToggle = nullptr;
-  QPlainTextEdit* LogOutput = nullptr;
+  QToolButton* HistoryToggle = nullptr;
+  QLabel* HistoryCountLabel = nullptr;
+  QScrollArea* HistoryScroll = nullptr;
+  QWidget* HistoryContainer = nullptr;
+  QVBoxLayout* HistoryLayout = nullptr;
 };
