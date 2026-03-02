@@ -60,7 +60,6 @@ ParaViewMCPHistoryEntry::ParaViewMCPHistoryEntry(const QJsonObject& entry, QWidg
   if (this->HasSnapshot)
   {
     this->RestoreButton = new QPushButton(QStringLiteral("Restore"), this);
-    this->RestoreButton->setFixedHeight(20);
     QObject::connect(this->RestoreButton,
                      &QPushButton::clicked,
                      this,
