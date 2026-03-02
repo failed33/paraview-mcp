@@ -6,14 +6,13 @@ import importlib
 import json
 import sys
 import types
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 
 @pytest.fixture(autouse=True)
-def _bridge(monkeypatch: pytest.MonkeyPatch):
+def bridge(monkeypatch: pytest.MonkeyPatch):
     """Install mock paraview modules and reimport the bridge for every test."""
     paraview_mod = types.ModuleType("paraview")
     simple_mod = types.ModuleType("paraview.simple")
@@ -44,22 +43,16 @@ def _bridge(monkeypatch: pytest.MonkeyPatch):
     sys.path.pop(0)
 
 
-def _load(raw: str) -> Any:
-    return json.loads(raw)
-
-
-def test_get_history_empty(_bridge) -> None:
-    bridge = _bridge
+def test_get_history_empty(bridge) -> None:
     bridge.bootstrap()
-    result = _load(bridge.get_history())
+    result = json.loads(bridge.get_history())
     assert result == []
 
 
-def test_get_history_after_execute(_bridge) -> None:
-    bridge = _bridge
+def test_get_history_after_execute(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1 + 1")
-    history = _load(bridge.get_history())
+    history = json.loads(bridge.get_history())
     assert len(history) == 1
     entry = history[0]
     assert entry["id"] == 1
@@ -72,30 +65,27 @@ def test_get_history_after_execute(_bridge) -> None:
     assert "result" in entry
 
 
-def test_history_increments_ids(_bridge) -> None:
-    bridge = _bridge
+def test_history_increments_ids(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("a = 1")
     bridge.execute_python("b = 2")
-    history = _load(bridge.get_history())
+    history = json.loads(bridge.get_history())
     assert len(history) == 2
     assert history[0]["id"] == 1
     assert history[1]["id"] == 2
 
 
-def test_history_captures_error(_bridge) -> None:
-    bridge = _bridge
+def test_history_captures_error(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("raise ValueError('boom')")
-    history = _load(bridge.get_history())
+    history = json.loads(bridge.get_history())
     assert len(history) == 1
     entry = history[0]
     assert entry["status"] == "error"
     assert "boom" in entry["result"]["error"]
 
 
-def test_inspect_pipeline_logged_without_snapshot(_bridge) -> None:
-    bridge = _bridge
+def test_inspect_pipeline_logged_without_snapshot(bridge) -> None:
     bridge.bootstrap()
     bridge.inspect_pipeline()
     history = json.loads(bridge.get_history())
@@ -106,8 +96,7 @@ def test_inspect_pipeline_logged_without_snapshot(_bridge) -> None:
     assert entry["status"] == "ok"
 
 
-def test_mixed_command_history(_bridge) -> None:
-    bridge = _bridge
+def test_mixed_command_history(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     bridge.inspect_pipeline()
@@ -124,8 +113,7 @@ def test_mixed_command_history(_bridge) -> None:
     assert history[2]["has_snapshot"] is True
 
 
-def test_restore_snapshot_truncates_history(_bridge) -> None:
-    bridge = _bridge
+def test_restore_snapshot_truncates_history(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     bridge.execute_python("y = 2")
@@ -140,8 +128,7 @@ def test_restore_snapshot_truncates_history(_bridge) -> None:
     assert history[0]["id"] == 1
 
 
-def test_restore_snapshot_invalid_id(_bridge) -> None:
-    bridge = _bridge
+def test_restore_snapshot_invalid_id(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     result = json.loads(bridge.restore_snapshot(999))
@@ -149,18 +136,16 @@ def test_restore_snapshot_invalid_id(_bridge) -> None:
     assert "error" in result
 
 
-def test_restore_snapshot_no_snapshot_entry(_bridge) -> None:
-    bridge = _bridge
+def test_restore_snapshot_no_snapshot_entry(bridge) -> None:
     bridge.bootstrap()
     bridge.inspect_pipeline()
     result = json.loads(bridge.restore_snapshot(1))
     assert result["ok"] is False
 
 
-def test_restore_calls_reset_session(_bridge) -> None:
+def test_restore_calls_reset_session(bridge) -> None:
     import paraview.simple as simple
 
-    bridge = _bridge
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     simple.ResetSession = MagicMock()
@@ -168,8 +153,7 @@ def test_restore_calls_reset_session(_bridge) -> None:
     simple.ResetSession.assert_called_once()
 
 
-def test_reset_session_clears_history(_bridge) -> None:
-    bridge = _bridge
+def test_reset_session_clears_history(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     bridge.execute_python("y = 2")
@@ -179,8 +163,7 @@ def test_reset_session_clears_history(_bridge) -> None:
     assert json.loads(bridge.get_history()) == []
 
 
-def test_ids_reset_after_session_reset(_bridge) -> None:
-    bridge = _bridge
+def test_ids_reset_after_session_reset(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     bridge.execute_python("y = 2")
@@ -192,8 +175,7 @@ def test_ids_reset_after_session_reset(_bridge) -> None:
     assert history[0]["id"] == 1
 
 
-def test_get_history_excludes_snapshot_content(_bridge) -> None:
-    bridge = _bridge
+def test_get_history_excludes_snapshot_content(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1")
     history = json.loads(bridge.get_history())
@@ -203,10 +185,9 @@ def test_get_history_excludes_snapshot_content(_bridge) -> None:
     assert entry["has_snapshot"] is True
 
 
-def test_capture_screenshot_logged_in_history(_bridge) -> None:
+def test_capture_screenshot_logged_in_history(bridge) -> None:
     import paraview.simple as simple
 
-    bridge = _bridge
     bridge.bootstrap()
 
     # Mock active view and SaveScreenshot so capture_screenshot succeeds

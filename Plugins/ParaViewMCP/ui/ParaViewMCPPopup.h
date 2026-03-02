@@ -22,6 +22,7 @@ public:
 
 private:
   void syncState();
+  void applyAppearance(const char* label, const char* color);
   void onHistoryChanged(const QString& historyJson);
   void onRestoreRequested(int entryId);
   void rebuildHistoryEntries(const QString& historyJson);

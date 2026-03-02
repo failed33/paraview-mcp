@@ -77,22 +77,35 @@ def _json_value(value: Any) -> Any:
     return None
 
 
-def _log_readonly(command: str, result_summary: str | None = None) -> None:
+def _timestamp() -> str:
+    return datetime.datetime.now(tz=datetime.timezone.utc).strftime("%H:%M:%S")
+
+
+def _append_entry(
+    command: str,
+    *,
+    code: str | None = None,
+    snapshot: str | None = None,
+    result: dict | None = None,
+    status: str = "ok",
+) -> None:
     global _NEXT_ID
     _HISTORY.append(
         {
             "id": _NEXT_ID,
             "command": command,
-            "code": None,
-            "snapshot": None,
-            "result": result_summary,
-            "status": "ok",
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime(
-                "%H:%M:%S"
-            ),
+            "code": code,
+            "snapshot": snapshot,
+            "result": result,
+            "status": status,
+            "timestamp": _timestamp(),
         }
     )
     _NEXT_ID += 1
+
+
+def _log_readonly(command: str) -> None:
+    _append_entry(command)
 
 
 def bootstrap() -> str:
@@ -164,8 +177,6 @@ def restore_snapshot(entry_id: int) -> str:
 
 
 def execute_python(code: str) -> str:
-    global _NEXT_ID
-
     namespace = _ensure_session()
     snapshot = _capture_snapshot()
     stdout_buffer = io.StringIO()
@@ -189,20 +200,13 @@ def execute_python(code: str) -> str:
     result["stdout"] = stdout_buffer.getvalue()
     result["stderr"] = stderr_buffer.getvalue()
 
-    _HISTORY.append(
-        {
-            "id": _NEXT_ID,
-            "command": "execute_python",
-            "code": code,
-            "snapshot": snapshot,
-            "result": {"stdout": result["stdout"], "error": result["error"]},
-            "status": "error" if not result["ok"] else "ok",
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime(
-                "%H:%M:%S"
-            ),
-        }
+    _append_entry(
+        "execute_python",
+        code=code,
+        snapshot=snapshot,
+        result={"stdout": result["stdout"], "error": result["error"]},
+        status="ok" if result["ok"] else "error",
     )
-    _NEXT_ID += 1
 
     return json.dumps(result)
 

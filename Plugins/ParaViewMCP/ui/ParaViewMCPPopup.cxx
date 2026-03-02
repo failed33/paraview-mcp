@@ -135,12 +135,7 @@ ParaViewMCPPopup::ParaViewMCPPopup(QWidget* parent)
                    [this](ParaViewMCPBridgeController::ServerState state)
                    {
                      const auto appearance = appearanceForState(state);
-                     this->StatusDot->setStyleSheet(
-                       QStringLiteral("background-color: %1; border-radius: 5px;")
-                         .arg(QLatin1String(appearance.Color)));
-                     this->StatusText->setText(QLatin1String(appearance.Label));
-                     this->StatusText->setStyleSheet(
-                       QStringLiteral("color: %1;").arg(QLatin1String(appearance.Color)));
+                     this->applyAppearance(appearance.Label, appearance.Color);
                    });
 
   QObject::connect(&controller,
@@ -196,13 +191,17 @@ void ParaViewMCPPopup::refreshFromController()
   this->rebuildHistoryEntries(controller.lastHistory());
 
   const auto appearance = appearanceForState(controller.serverState());
-  this->StatusDot->setStyleSheet(QStringLiteral("background-color: %1; border-radius: 5px;")
-                                   .arg(QLatin1String(appearance.Color)));
-  this->StatusText->setText(QLatin1String(appearance.Label));
-  this->StatusText->setStyleSheet(
-    QStringLiteral("color: %1;").arg(QLatin1String(appearance.Color)));
+  this->applyAppearance(appearance.Label, appearance.Color);
 
   this->syncState();
+}
+
+void ParaViewMCPPopup::applyAppearance(const char* label, const char* color)
+{
+  this->StatusDot->setStyleSheet(
+    QStringLiteral("background-color: %1; border-radius: 5px;").arg(QLatin1String(color)));
+  this->StatusText->setText(QLatin1String(label));
+  this->StatusText->setStyleSheet(QStringLiteral("color: %1;").arg(QLatin1String(color)));
 }
 
 void ParaViewMCPPopup::syncState()
@@ -255,7 +254,7 @@ void ParaViewMCPPopup::rebuildHistoryEntries(const QString& historyJson)
 
   this->HistoryCountLabel->setText(QStringLiteral("(%1)").arg(entries.size()));
 
-  for (const QJsonValue& val : entries)
+  for (const auto& val : entries)
   {
     auto* entry = new ParaViewMCPHistoryEntry(val.toObject(), this->HistoryContainer);
     QObject::connect(entry,
