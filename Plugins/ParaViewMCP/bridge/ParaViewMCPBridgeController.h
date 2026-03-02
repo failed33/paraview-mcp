@@ -43,18 +43,22 @@ public:
   bool hasClient() const;
   QString lastStatus() const;
   QString lastLog() const;
+  QString lastHistory() const;
   ServerState serverState() const;
+  void restoreSnapshot(int entryId);
 
 signals:
   void statusChanged(const QString& status);
   void logChanged(const QString& message);
   void serverStateChanged(ServerState state);
+  void historyChanged(const QString& historyJson);
 
 private:
   explicit ParaViewMCPBridgeController(QObject* parent = nullptr);
 
   void setStatus(const QString& status);
   void setLog(const QString& message);
+  void setHistory(const QString& historyJson);
   void updateServerState();
 
   bool Initialized = false;
@@ -63,6 +67,7 @@ private:
   ServerState CurrentState = ServerState::Stopped;
   QString LastStatus;
   QString LastLog;
+  QString LastHistory;
   ParaViewMCPPythonBridge PythonBridge;
   ParaViewMCPRequestHandler RequestHandler;
   ParaViewMCPSocketBridge SocketBridge;

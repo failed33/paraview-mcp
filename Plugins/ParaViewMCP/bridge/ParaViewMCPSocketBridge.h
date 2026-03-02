@@ -32,6 +32,7 @@ public:
 signals:
   void statusChanged(const QString& status);
   void logChanged(const QString& message);
+  void historyChanged(const QString& historyJson);
 
 private:
   void setStatus(const QString& status);

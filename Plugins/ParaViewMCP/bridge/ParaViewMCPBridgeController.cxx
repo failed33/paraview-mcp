@@ -2,6 +2,9 @@
 
 #include "ParaViewMCPPopup.h"
 
+#include <QJsonArray>
+#include <QJsonDocument>
+
 ParaViewMCPBridgeController& ParaViewMCPBridgeController::instance()
 {
   static ParaViewMCPBridgeController controller;
@@ -20,6 +23,10 @@ ParaViewMCPBridgeController::ParaViewMCPBridgeController(QObject* parent)
                    &ParaViewMCPSocketBridge::logChanged,
                    this,
                    &ParaViewMCPBridgeController::setLog);
+  QObject::connect(&this->SocketBridge,
+                   &ParaViewMCPSocketBridge::historyChanged,
+                   this,
+                   &ParaViewMCPBridgeController::setHistory);
 }
 
 void ParaViewMCPBridgeController::initialize()
@@ -128,6 +135,28 @@ QString ParaViewMCPBridgeController::lastLog() const
   return this->LastLog;
 }
 
+QString ParaViewMCPBridgeController::lastHistory() const
+{
+  return this->LastHistory;
+}
+
+void ParaViewMCPBridgeController::restoreSnapshot(int entryId)
+{
+  QJsonObject result;
+  QString errorText;
+  if (!this->PythonBridge.restoreSnapshot(entryId, &result, &errorText))
+  {
+    this->setLog(QStringLiteral("Restore failed: %1").arg(errorText));
+    return;
+  }
+
+  QJsonArray historyArray;
+  if (this->PythonBridge.getHistory(&historyArray, nullptr))
+  {
+    this->setHistory(QString::fromUtf8(QJsonDocument(historyArray).toJson(QJsonDocument::Compact)));
+  }
+}
+
 ParaViewMCPBridgeController::ServerState ParaViewMCPBridgeController::serverState() const
 {
   return this->CurrentState;
@@ -173,4 +202,10 @@ void ParaViewMCPBridgeController::setLog(const QString& message)
 {
   this->LastLog = message;
   emit this->logChanged(message);
+}
+
+void ParaViewMCPBridgeController::setHistory(const QString& historyJson)
+{
+  this->LastHistory = historyJson;
+  emit this->historyChanged(historyJson);
 }

@@ -194,6 +194,11 @@ void ParaViewMCPSocketBridge::applyHandlerResult(const ParaViewMCPRequestHandler
     this->setLog(result.LogMessage);
   }
 
+  if (!result.HistoryJson.isEmpty())
+  {
+    emit this->historyChanged(result.HistoryJson);
+  }
+
   if (!result.Response.isEmpty())
   {
     ParaViewMCPSocketBridge::sendMessage(this->Session.socket(), result.Response);

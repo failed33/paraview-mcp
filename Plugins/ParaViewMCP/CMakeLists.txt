@@ -18,6 +18,8 @@ set(paraview_mcp_plugin_sources
   lifecycle/ParaViewMCPAutoStart.h
   ui/ParaViewMCPActionGroup.cxx
   ui/ParaViewMCPActionGroup.h
+  ui/ParaViewMCPHistoryEntry.cxx
+  ui/ParaViewMCPHistoryEntry.h
   ui/ParaViewMCPPopup.cxx
   ui/ParaViewMCPPopup.h
   ui/ParaViewMCPStateAppearance.h
@@ -32,6 +34,7 @@ set(paraview_mcp_lint_sources
   bridge/ParaViewMCPPythonBridge.cxx
   lifecycle/ParaViewMCPAutoStart.cxx
   ui/ParaViewMCPActionGroup.cxx
+  ui/ParaViewMCPHistoryEntry.cxx
   ui/ParaViewMCPPopup.cxx
   ui/ParaViewMCPToolbar.cxx
 )
