@@ -67,7 +67,7 @@ def _load_real_modules():
 
 try:
     _real_modules, _Client, _mcp, _ParaViewCommandError = _load_real_modules()
-except Exception:  # fastmcp not installed — tests will be skipped
+except (ModuleNotFoundError, ImportError):  # fastmcp not installed — tests will be skipped
     _real_modules, _Client, _mcp, _ParaViewCommandError = {}, None, None, None
 
 

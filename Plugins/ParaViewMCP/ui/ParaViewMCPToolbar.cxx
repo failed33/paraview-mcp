@@ -83,10 +83,9 @@ void ParaViewMCPToolbar::changeEvent(QEvent* event)
 
 void ParaViewMCPToolbar::updateIcon()
 {
-  // Light icon (white) for dark themes, dark icon (black) for light themes
   const QString iconPath = pqCoreUtilities::isDarkTheme()
-                             ? QStringLiteral(":/ParaViewMCP/mcp-icon-dark.png")
-                             : QStringLiteral(":/ParaViewMCP/mcp-icon-light.png");
+                             ? QStringLiteral(":/ParaViewMCP/mcp-icon-for-dark-theme.png")
+                             : QStringLiteral(":/ParaViewMCP/mcp-icon-for-light-theme.png");
   this->Button->setIcon(QIcon(iconPath));
 }
 

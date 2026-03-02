@@ -33,8 +33,10 @@ def _get_runtime_package_names() -> set[str]:
     """Resolve the runtime dependency tree and return normalized names.
 
     Uses ``uv export`` to read from the lockfile for deterministic resolution
-    across platforms.  Packages with environment markers (e.g. ``; sys_platform
-    == 'win32'``) are excluded so the output is identical on every OS.
+    across platforms.  Packages with OS-specific markers (``sys_platform``)
+    are excluded so the output is identical on every OS.  Packages guarded
+    by implementation markers (e.g. ``platform_python_implementation``) are
+    kept since we target CPython on all platforms.
     """
     result = subprocess.run(
         ["uv", "export", "--no-dev", "--no-hashes", "--no-header"],
@@ -48,9 +50,15 @@ def _get_runtime_package_names() -> set[str]:
         line = line.strip()
         if not line or line.startswith("#") or line.startswith("-e"):
             continue
-        # Skip platform-specific packages (lines with environment markers)
+        # Skip OS-specific packages (e.g. colorama on Windows, jeepney on
+        # Linux) so the output is identical on every OS.  Keep packages
+        # guarded only by implementation markers (e.g. cffi with
+        # ``platform_python_implementation != 'PyPy'``) since we target
+        # CPython on all platforms.
         if ";" in line:
-            continue
+            marker = line.split(";", 1)[1]
+            if "sys_platform" in marker:
+                continue
         if "==" in line:
             names.add(line.split("==")[0].strip().lower())
     return names
