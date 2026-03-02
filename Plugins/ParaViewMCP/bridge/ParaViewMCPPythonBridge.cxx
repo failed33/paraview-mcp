@@ -228,6 +228,18 @@ bool ParaViewMCPPythonBridge::getHistory(QJsonArray* result, QString* error)
   }
 
   const char* utf8 = PyUnicode_AsUTF8(value);
+  if (utf8 == nullptr)
+  {
+    // Conversion to UTF-8 failed; clear the Python error and report a clear message.
+    PyErr_Clear();
+    Py_DECREF(value);
+    PyGILState_Release(gilState);
+    if (error)
+    {
+      *error = QStringLiteral("get_history returned a non-UTF-8 string");
+    }
+    return false;
+  }
   QJsonParseError parseError;
   const QJsonDocument document = QJsonDocument::fromJson(QByteArray(utf8), &parseError);
   Py_DECREF(value);
