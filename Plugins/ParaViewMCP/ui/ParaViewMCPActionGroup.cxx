@@ -5,7 +5,6 @@
 #include <pqCoreUtilities.h>
 
 #include <QAction>
-#include <QCursor>
 #include <QIcon>
 
 ParaViewMCPActionGroup::ParaViewMCPActionGroup(QObject* parent) : QActionGroup(parent)

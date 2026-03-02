@@ -242,6 +242,7 @@ void ParaViewMCPSocketBridge::closeClientSocket(bool resetSession, bool emitStat
   if (resetSession && this->PythonBridge.isReady())
   {
     this->PythonBridge.resetSession();
+    emit this->historyChanged(QString());
   }
 
   if (emitStateUpdate)
