@@ -147,6 +147,7 @@ void ParaViewMCPBridgeController::restoreSnapshot(int entryId)
   if (!this->PythonBridge.restoreSnapshot(entryId, &result, &errorText))
   {
     this->setLog(QStringLiteral("Restore failed: %1").arg(errorText));
+    this->setStatus(QStringLiteral("Error"));
     return;
   }
 
