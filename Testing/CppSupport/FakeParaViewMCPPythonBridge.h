@@ -11,12 +11,14 @@ public:
   bool ExecuteResult = true;
   bool InspectResult = true;
   bool ScreenshotResult = true;
+  bool RestoreResult = true;
 
   QString InitializeError;
   QString ResetError;
   QString ExecuteError;
   QString InspectError;
   QString ScreenshotError;
+  QString RestoreError;
 
   QJsonObject ExecutePayload = QJsonObject{{"ok", true}};
   QJsonObject InspectPayload = QJsonObject{{"count", 0}};
@@ -120,4 +122,34 @@ public:
     }
     return true;
   }
+
+  bool getHistory(QJsonArray* result, QString* /*error*/ = nullptr) override
+  {
+    if (result != nullptr)
+    {
+      *result = this->HistoryPayload;
+    }
+    return true;
+  }
+
+  bool restoreSnapshot(int entryId, QJsonObject* result, QString* error = nullptr) override
+  {
+    this->LastRestoreEntryId = entryId;
+    if (!this->RestoreResult)
+    {
+      if (error != nullptr)
+      {
+        *error = this->RestoreError;
+      }
+      return false;
+    }
+    if (result != nullptr)
+    {
+      *result = QJsonObject{{"ok", true}};
+    }
+    return true;
+  }
+
+  QJsonArray HistoryPayload;
+  int LastRestoreEntryId = 0;
 };

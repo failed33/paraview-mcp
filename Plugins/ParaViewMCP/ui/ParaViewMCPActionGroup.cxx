@@ -2,6 +2,8 @@
 
 #include "bridge/ParaViewMCPBridgeController.h"
 
+#include <pqCoreUtilities.h>
+
 #include <QAction>
 #include <QIcon>
 
@@ -12,5 +14,9 @@ ParaViewMCPActionGroup::ParaViewMCPActionGroup(QObject* parent) : QActionGroup(p
   this->addAction(action);
   QObject::connect(action,
                    &QAction::triggered,
-                   []() { ParaViewMCPBridgeController::instance().showDockWindow(); });
+                   []()
+                   {
+                     QWidget* mainWindow = pqCoreUtilities::mainWidget();
+                     ParaViewMCPBridgeController::instance().showPopup(mainWindow);
+                   });
 }

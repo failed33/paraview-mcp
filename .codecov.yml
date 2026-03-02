@@ -22,3 +22,13 @@ ignore:
   - "ThirdParty/**"
   - "build/**"
   - "**/Testing/**"
+  # Qt widget files — pure UI construction, no business logic.
+  # Require QApplication + ParaView plugin infrastructure to instantiate.
+  - "Plugins/ParaViewMCP/ui/**"
+  # Singleton controller tightly coupled to ParaView runtime.
+  - "Plugins/ParaViewMCP/bridge/ParaViewMCPBridgeController.cxx"
+  - "Plugins/ParaViewMCP/bridge/ParaViewMCPBridgeController.h"
+  # Python C-API wrapper — exercised by integration tests, not unit tests.
+  - "Plugins/ParaViewMCP/bridge/ParaViewMCPPythonBridge.cxx"
+  # ParaView autostart lifecycle hook.
+  - "Plugins/ParaViewMCP/lifecycle/**"

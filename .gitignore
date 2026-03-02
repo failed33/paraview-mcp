@@ -2,6 +2,7 @@
 .build/
 .build-ninja/
 build/
+Testing/Temporary/
 .dist/
 dist/
 compile_commands.json

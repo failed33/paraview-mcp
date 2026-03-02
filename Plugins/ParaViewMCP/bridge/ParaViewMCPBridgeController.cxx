@@ -1,6 +1,9 @@
 #include "ParaViewMCPBridgeController.h"
 
-#include "ParaViewMCPDockWindow.h"
+#include "ParaViewMCPPopup.h"
+
+#include <QJsonArray>
+#include <QJsonDocument>
 
 ParaViewMCPBridgeController& ParaViewMCPBridgeController::instance()
 {
@@ -20,6 +23,10 @@ ParaViewMCPBridgeController::ParaViewMCPBridgeController(QObject* parent)
                    &ParaViewMCPSocketBridge::logChanged,
                    this,
                    &ParaViewMCPBridgeController::setLog);
+  QObject::connect(&this->SocketBridge,
+                   &ParaViewMCPSocketBridge::historyChanged,
+                   this,
+                   &ParaViewMCPBridgeController::setHistory);
 }
 
 void ParaViewMCPBridgeController::initialize()
@@ -46,21 +53,18 @@ void ParaViewMCPBridgeController::shutdown()
   this->Initialized = false;
 }
 
-void ParaViewMCPBridgeController::registerDockWindow(ParaViewMCPDockWindow* dockWindow)
+void ParaViewMCPBridgeController::registerPopup(ParaViewMCPPopup* popup)
 {
-  this->DockWindow = dockWindow;
+  this->Popup = popup;
 }
 
-void ParaViewMCPBridgeController::showDockWindow()
+void ParaViewMCPBridgeController::showPopup(QWidget* anchor)
 {
-  if (!this->DockWindow)
+  if (!this->Popup)
   {
     return;
   }
-
-  this->DockWindow->show();
-  this->DockWindow->raise();
-  this->DockWindow->activateWindow();
+  this->Popup->showRelativeTo(anchor);
 }
 
 bool ParaViewMCPBridgeController::startServer(const QString& host,
@@ -106,6 +110,11 @@ quint16 ParaViewMCPBridgeController::port() const
   return this->Config.Port;
 }
 
+QString ParaViewMCPBridgeController::authToken() const
+{
+  return this->Config.AuthToken;
+}
+
 bool ParaViewMCPBridgeController::isListening() const
 {
   return this->SocketBridge.isListening();
@@ -126,8 +135,66 @@ QString ParaViewMCPBridgeController::lastLog() const
   return this->LastLog;
 }
 
+QString ParaViewMCPBridgeController::lastHistory() const
+{
+  return this->LastHistory;
+}
+
+void ParaViewMCPBridgeController::restoreSnapshot(int entryId)
+{
+  QJsonObject result;
+  QString errorText;
+  if (!this->PythonBridge.restoreSnapshot(entryId, &result, &errorText))
+  {
+    this->setLog(QStringLiteral("Restore failed: %1").arg(errorText));
+    this->setStatus(QStringLiteral("Error"));
+    return;
+  }
+
+  QJsonArray historyArray;
+  if (this->PythonBridge.getHistory(&historyArray, nullptr))
+  {
+    this->setHistory(QString::fromUtf8(QJsonDocument(historyArray).toJson(QJsonDocument::Compact)));
+  }
+}
+
+ParaViewMCPBridgeController::ServerState ParaViewMCPBridgeController::serverState() const
+{
+  return this->CurrentState;
+}
+
+void ParaViewMCPBridgeController::updateServerState()
+{
+  ServerState newState = ServerState::Stopped;
+  if (this->SocketBridge.hasClient())
+  {
+    newState = ServerState::Connected;
+  }
+  else if (this->SocketBridge.isListening())
+  {
+    newState = ServerState::Listening;
+  }
+  if (newState != this->CurrentState)
+  {
+    this->CurrentState = newState;
+    emit this->serverStateChanged(newState);
+  }
+}
+
 void ParaViewMCPBridgeController::setStatus(const QString& status)
 {
+  if (status == QStringLiteral("Error"))
+  {
+    if (this->CurrentState != ServerState::Error)
+    {
+      this->CurrentState = ServerState::Error;
+      emit this->serverStateChanged(ServerState::Error);
+    }
+  }
+  else
+  {
+    this->updateServerState();
+  }
   this->LastStatus = status;
   emit this->statusChanged(status);
 }
@@ -136,4 +203,10 @@ void ParaViewMCPBridgeController::setLog(const QString& message)
 {
   this->LastLog = message;
   emit this->logChanged(message);
+}
+
+void ParaViewMCPBridgeController::setHistory(const QString& historyJson)
+{
+  this->LastHistory = historyJson;
+  emit this->historyChanged(historyJson);
 }

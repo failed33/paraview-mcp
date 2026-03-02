@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import datetime
 import io
 import json
 import os
@@ -12,6 +13,8 @@ from contextlib import redirect_stderr, redirect_stdout
 from typing import Any
 
 _SESSION_GLOBALS: dict[str, Any] | None = None
+_HISTORY: list[dict] = []
+_NEXT_ID: int = 1
 
 
 def _new_session() -> dict[str, Any]:
@@ -37,6 +40,15 @@ def _ensure_session() -> dict[str, Any]:
     if _SESSION_GLOBALS is None:
         _SESSION_GLOBALS = _new_session()
     return _SESSION_GLOBALS
+
+
+def _capture_snapshot() -> str | None:
+    try:
+        from paraview import smstate
+
+        return smstate.get_state()
+    except Exception:
+        return None
 
 
 def _json_value(value: Any) -> Any:
@@ -65,19 +77,108 @@ def _json_value(value: Any) -> Any:
     return None
 
 
+def _timestamp() -> str:
+    return datetime.datetime.now(tz=datetime.timezone.utc).strftime("%H:%M:%S")
+
+
+def _append_entry(
+    command: str,
+    *,
+    code: str | None = None,
+    snapshot: str | None = None,
+    result: dict | None = None,
+    status: str = "ok",
+) -> None:
+    global _NEXT_ID
+    _HISTORY.append(
+        {
+            "id": _NEXT_ID,
+            "command": command,
+            "code": code,
+            "snapshot": snapshot,
+            "result": result,
+            "status": status,
+            "timestamp": _timestamp(),
+        }
+    )
+    _NEXT_ID += 1
+
+
+def _log_readonly(command: str) -> None:
+    _append_entry(command)
+
+
 def bootstrap() -> str:
     _ensure_session()
     return json.dumps({"ok": True})
 
 
+def get_history() -> str:
+    lightweight = []
+    for entry in _HISTORY:
+        slim = {k: v for k, v in entry.items() if k != "snapshot"}
+        slim["has_snapshot"] = entry.get("snapshot") is not None
+        lightweight.append(slim)
+    return json.dumps(lightweight)
+
+
 def reset_session() -> str:
-    global _SESSION_GLOBALS
+    global _SESSION_GLOBALS, _HISTORY, _NEXT_ID
     _SESSION_GLOBALS = _new_session()
+    _HISTORY = []
+    _NEXT_ID = 1
+    return json.dumps({"ok": True})
+
+
+def restore_snapshot(entry_id: int) -> str:
+    """Restore pipeline state to before the given history entry.
+
+    Truncates history to entries before entry_id.
+    """
+    global _SESSION_GLOBALS, _HISTORY, _NEXT_ID
+    from paraview import simple
+
+    target = None
+    target_idx = None
+    for idx, entry in enumerate(_HISTORY):
+        if entry["id"] == entry_id:
+            target = entry
+            target_idx = idx
+            break
+
+    if target is None:
+        return json.dumps(
+            {"ok": False, "error": f"No history entry with id {entry_id}"}
+        )
+
+    snapshot = target.get("snapshot")
+    if snapshot is None:
+        return json.dumps(
+            {"ok": False, "error": "Entry has no snapshot (read-only command)"}
+        )
+
+    try:
+        simple.ResetSession()
+        exec(snapshot, {"__builtins__": __builtins__})
+    except Exception as exc:
+        return json.dumps(
+            {
+                "ok": False,
+                "error": f"Failed to restore snapshot: {exc}",
+                "traceback": traceback.format_exc(),
+            }
+        )
+
+    _HISTORY = _HISTORY[:target_idx]
+    _NEXT_ID = (_HISTORY[-1]["id"] + 1) if _HISTORY else 1
+    _SESSION_GLOBALS = _new_session()
+
     return json.dumps({"ok": True})
 
 
 def execute_python(code: str) -> str:
     namespace = _ensure_session()
+    snapshot = _capture_snapshot()
     stdout_buffer = io.StringIO()
     stderr_buffer = io.StringIO()
     result = {
@@ -98,6 +199,15 @@ def execute_python(code: str) -> str:
 
     result["stdout"] = stdout_buffer.getvalue()
     result["stderr"] = stderr_buffer.getvalue()
+
+    _append_entry(
+        "execute_python",
+        code=code,
+        snapshot=snapshot,
+        result={"stdout": result["stdout"], "error": result["error"]},
+        status="ok" if result["ok"] else "error",
+    )
+
     return json.dumps(result)
 
 
@@ -176,6 +286,7 @@ def inspect_pipeline() -> str:
 
         sources.append(entry)
 
+    _log_readonly("inspect_pipeline")
     return json.dumps({"count": len(sources), "sources": sources})
 
 
@@ -198,6 +309,7 @@ def capture_screenshot(width: int, height: int) -> str:
         )
         with open(path, "rb") as handle:
             image_bytes = handle.read()
+        _log_readonly("capture_screenshot")
         return json.dumps(
             {
                 "format": "png",
