@@ -41,6 +41,7 @@ repos:
     hooks:
       - id: commitlint
         stages: [commit-msg]
+        pass_filenames: true
         additional_dependencies: ["@commitlint/config-conventional"]
 
   - repo: local
