@@ -27,6 +27,15 @@ jobs:
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Validate pull request title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          title_file=$(mktemp)
+          printf '%s\n' "$PR_TITLE" > "$title_file"
+          pre-commit run commitlint --hook-stage commit-msg \
+            --commit-msg-filename "$title_file"
       - run: pre-commit run --all-files
 
   python:
