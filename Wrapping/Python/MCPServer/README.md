@@ -1,14 +1,15 @@
 <!-- mcp-name: io.github.failed33/paraview-mcp-server -->
 # ParaView MCP Server
 
-This package is the external FastMCP server that talks to the ParaView MCP client plugin over TCP.
+This package is the external [FastMCP](https://gofastmcp.com/) server that talks to the
+ParaView MCP plugin over TCP.
 
 It expects the ParaView-side C++ plugin to be loaded and listening first.
 
 ## Requirements
 
 - Python `>=3.13`
-- `mcp[cli]>=1.26.0,<2`
+- `fastmcp>=3.4.7,<4`
 
 ## Install
 
@@ -18,10 +19,10 @@ Run without installing (recommended):
 uvx paraview-mcp-server
 ```
 
-Or install from PyPI:
+Or install the command from PyPI:
 
 ```bash
-pip install paraview-mcp-server
+uv tool install paraview-mcp-server
 ```
 
 For development, install in editable mode from the repository:
@@ -31,9 +32,9 @@ cd Wrapping/Python/MCPServer
 uv sync
 ```
 
-## Environment Optional Configurations
+## Optional Environment Configuration
 
-- `PARAVIEW_HOST` defaults to `127.0.0.1` -> set this for remote connections
+- `PARAVIEW_HOST` defaults to `127.0.0.1`; set it for remote connections
 - `PARAVIEW_PORT` defaults to `9877`
 - `PARAVIEW_AUTH_TOKEN` is required for non-loopback targets
 

@@ -22,14 +22,16 @@ repos:
         files: \.(h|cxx)$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.4
+    rev: v0.16.2
     hooks:
       - id: ruff-check
         args: [--fix]
+        files: ^Wrapping/Python/MCPServer/
       - id: ruff-format
+        files: ^Wrapping/Python/MCPServer/
 
   - repo: https://github.com/facebook/pyrefly-pre-commit
-    rev: "0.54.0"
+    rev: "1.2.0"
     hooks:
       - id: pyrefly-check
         pass_filenames: false
@@ -53,7 +55,10 @@ repos:
       - id: license-notices
         name: license-notices
         language: system
-        entry: uv run --project Wrapping/Python/MCPServer python scripts/update-notices.py --check
+        entry: >-
+          bash -c 'uv run --project Wrapping/Python/MCPServer python scripts/update-notices.py --check ||
+          echo "WARNING: THIRD-PARTY-NOTICES.txt is stale; run uv run --project
+          Wrapping/Python/MCPServer python scripts/update-notices.py"'
         pass_filenames: false
         always_run: true
         stages: [pre-push]

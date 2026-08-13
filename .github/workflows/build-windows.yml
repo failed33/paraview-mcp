@@ -1,0 +1,251 @@
+name: Build Windows x64 (ParaView 5.13-6.1)
+
+# Builds Windows x64 plugins against the latest patch releases in the supported
+# ParaView 5.13-6.1 range. Official archives do not ship a usable SDK, so each
+# matrix entry builds the matching ParaView source with its Qt and Python ABI.
+#
+# Python major.minor must match because the resulting DLL imports pythonXY.dll
+# by name. Qt imports also resolve by DLL name from ParaView's application dir.
+#
+# Implements failed33/paraview-mcp#31.
+#
+# NOTE: a from-source ParaView build on a standard Windows runner is slow and may
+# approach the 6 h job limit on the first (uncached) run; the SDK is cached so
+# re-runs only rebuild the plugin.
+
+on:
+  pull_request:
+    paths:
+      - .github/INSTALL_PLUGIN.md
+      - .github/workflows/build-windows.yml
+      - CMakeLists.txt
+      - CMake/**
+      - LICENSE
+      - LICENSES/**
+      - Plugins/**
+      - THIRD-PARTY-NOTICES.txt
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      package_version:
+        description: Version used in archive names; defaults to CMakeLists.txt
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-windows-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-plugin-windows:
+    runs-on: windows-2022
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - paraview_version: v5.13.3
+            paraview_commit: d9100e04f9558222bbb48852d03035638812549b
+            paraview_series: '5.13'
+            qt_version: 5.15.2
+            qt_arch: win64_msvc2019_64
+            qt_dir: msvc2019_64
+            python_version: '3.10'
+          - paraview_version: v6.0.1
+            paraview_commit: bdd52330012d733d3d6d85702a0498243af46272
+            paraview_series: '6.0'
+            qt_version: 6.9.0
+            qt_arch: win64_msvc2022_64
+            qt_dir: msvc2022_64
+            python_version: '3.12'
+          - paraview_version: v6.1.1
+            paraview_commit: c373b13bca0b97680bae8de3e997c056404b9b77
+            paraview_series: '6.1'
+            qt_version: 6.9.0
+            qt_arch: win64_msvc2022_64
+            qt_dir: msvc2022_64
+            python_version: '3.12'
+    env:
+      PACKAGE_VERSION: ${{ inputs.package_version }}
+      PARAVIEW_VERSION: ${{ matrix.paraview_version }}
+      PARAVIEW_COMMIT: ${{ matrix.paraview_commit }}
+      PARAVIEW_SERIES: ${{ matrix.paraview_series }}
+      QT_VERSION: ${{ matrix.qt_version }}
+      QT_ARCH: ${{ matrix.qt_arch }}
+      QT_DIR: ${{ matrix.qt_dir }}
+      PYTHON_VERSION: ${{ matrix.python_version }}
+      AQTINSTALL_VERSION: 3.3.0
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up MSVC (x64)
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+
+      - name: Install Ninja
+        shell: pwsh
+        run: choco install ninja -y --no-progress
+
+      - name: Install Qt ${{ env.QT_VERSION }} via aqtinstall
+        shell: pwsh
+        run: |
+          python -m pip install --quiet "aqtinstall==$env:AQTINSTALL_VERSION"
+          $moduleArgs = @()
+          if ($env:QT_VERSION.StartsWith('6.')) {
+            $moduleArgs = @('-m', 'qt5compat', 'qtimageformats')
+          }
+          # TODO(aqtinstall#995): Remove the external extractor and serialized
+          # extraction after the upstream fix is included in a stable release.
+          # https://github.com/miurahr/aqtinstall/issues/995
+          $aqtConfig = Join-Path $env:RUNNER_TEMP 'aqt.ini'
+          Set-Content -Path $aqtConfig -Value "[aqt]`nconcurrency = 1" -Encoding ascii
+          python -m aqt --config $aqtConfig install-qt windows desktop $env:QT_VERSION $env:QT_ARCH `
+            @moduleArgs --external 7z --outputdir D:\Qt
+          $qt = "D:/Qt/$env:QT_VERSION/$env:QT_DIR"
+          if (-not (Test-Path $qt)) { Write-Error "Qt not found at $qt"; exit 1 }
+          "QT_PREFIX=$qt" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      # --- ParaView SDK from source, built against the matching Qt ABI ---------
+      - name: Restore ParaView SDK cache
+        id: cache-pv
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: D:\pv-sdk
+          key: paraview-win-${{ env.PARAVIEW_COMMIT }}-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-msvc2022-v2
+
+      - name: Clone and patch ParaView source
+        if: steps.cache-pv.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          git clone --recursive --branch "$PARAVIEW_VERSION" --depth 1 \
+            https://gitlab.kitware.com/paraview/paraview.git /d/pv-src
+          test "$(git -C /d/pv-src rev-parse HEAD)" = "$PARAVIEW_COMMIT"
+          cd /d/pv-src
+          # Idempotent Qt6 .arg(enum) cast normalizer (no-op at Qt 6.9.0, but safe).
+          for f in \
+            "Qt/Core/pqFlatTreeViewEventTranslator.cxx" \
+            "Qt/Core/pqQVTKWidgetEventTranslator.cxx" \
+            "ThirdParty/QtTesting/vtkqttesting/pqAbstractItemViewEventTranslator.cxx" \
+            "ThirdParty/QtTesting/vtkqttesting/pqBasicWidgetEventTranslator.cxx"; do
+            if [ -f "$f" ]; then
+              perl -0777 -pi -e '
+                s/\.arg\(mouseEvent->button\(\)\)/.arg(static_cast<int>(mouseEvent->button()))/g;
+                s/\.arg\(mouseEvent->buttons\(\)\)/.arg(static_cast<int>(mouseEvent->buttons()))/g;
+                s/\.arg\(mouseEvent->modifiers\(\)\)/.arg(static_cast<int>(mouseEvent->modifiers()))/g;
+              ' "$f"
+            fi
+          done
+
+      - name: Build ParaView SDK
+        if: steps.cache-pv.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $py = ($env:pythonLocation -replace '\\','/') + '/python.exe'
+          & $py --version
+          cmake -S D:/pv-src -B D:/pv-build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_INSTALL_PREFIX=D:/pv-sdk `
+            -DBUILD_SHARED_LIBS=ON `
+            -DBUILD_TESTING=OFF `
+            -DPARAVIEW_USE_QT=ON `
+            -DPARAVIEW_USE_PYTHON=ON `
+            -DPARAVIEW_USE_MPI=OFF `
+            -DPARAVIEW_ENABLE_WEB=OFF `
+            -DPARAVIEW_ENABLE_EXAMPLES=OFF `
+            -DVTK_WRAP_PYTHON=ON `
+            -DPython3_EXECUTABLE="$py" `
+            -DPython3_FIND_REGISTRY=NEVER `
+            -DCMAKE_PREFIX_PATH="$env:QT_PREFIX"
+          cmake --build D:/pv-build --parallel
+          cmake --install D:/pv-build
+
+      - name: Save ParaView SDK cache
+        if: steps.cache-pv.outputs.cache-hit != 'true'
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: D:\pv-sdk
+          key: paraview-win-${{ env.PARAVIEW_COMMIT }}-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-msvc2022-v2
+
+      # --- Plugin, built against the same Qt ABI ------------------------------
+      - name: Build plugin
+        shell: pwsh
+        run: |
+          $py = ($env:pythonLocation -replace '\\','/') + '/python.exe'
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="D:/pv-sdk;$env:QT_PREFIX" `
+            -DCMAKE_INSTALL_PREFIX="$($PWD.Path)/install" `
+            -DPython3_EXECUTABLE="$py" `
+            -DPython3_FIND_REGISTRY=NEVER `
+            -DBUILD_TESTING=OFF
+          cmake --build build --parallel
+          cmake --install build
+
+      # Guard against the exact failure seen in the field: a plugin built with a
+      # newer Python imports pythonXY.dll by that name, the official ParaView
+      # only ships python312.dll, and LoadLibrary fails with "The specified
+      # module could not be found". Fail the build if the import is wrong.
+      - name: Verify plugin imports ParaView's bundled Python DLL
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem install -Recurse -Filter ParaViewMCP.dll | Select-Object -First 1
+          if (-not $dll) { Write-Error 'ParaViewMCP.dll not found'; exit 1 }
+          $deps = dumpbin /dependents $dll.FullName
+          $deps | Write-Output
+          $expected = 'python' + ($env:PYTHON_VERSION -replace '\.','') + '.dll'
+          $pyImports = @($deps | Select-String -Pattern 'python3\d+\.dll' -AllMatches |
+            ForEach-Object { $_.Matches } | ForEach-Object { $_.Value.ToLower() } |
+            Sort-Object -Unique)
+          Write-Output "Python imports: [$($pyImports -join ', ')] (expected: $expected)"
+          if ($pyImports.Count -ne 1 -or $pyImports[0] -ne $expected) {
+            Write-Error "Plugin must import exactly $expected — that is the Python the target ParaView binary bundles; anything else cannot load."
+            exit 1
+          }
+
+      - name: Package zip
+        shell: bash
+        run: |
+          version="${PACKAGE_VERSION#v}"
+          if [ -z "$version" ]; then
+            version=$(sed -nE \
+              's/^project\(ParaViewMCP VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' \
+              CMakeLists.txt)
+          fi
+          test -n "$version"
+
+          DLL=$(find install -name 'ParaViewMCP.dll' | head -1)
+          XML=$(find install -name 'ParaViewMCP.plugins.xml' | head -1)
+          if [ -z "$DLL" ]; then echo "ParaViewMCP.dll not found"; find install | head -50; exit 1; fi
+          DIR="ParaViewMCP-${version}-ParaView-${PARAVIEW_VERSION#v}-windows-x64"
+          mkdir -p "$DIR"
+          cp "$DLL" "$DIR/"
+          [ -n "$XML" ] && cp "$XML" "$DIR/"
+          cp LICENSE THIRD-PARTY-NOTICES.txt "$DIR/"
+          cp -r LICENSES "$DIR/"
+          cp .github/INSTALL_PLUGIN.md "$DIR/INSTALL.md"
+          7z a "$DIR.zip" "$DIR" > /dev/null
+          sha256sum "$DIR.zip" > "$DIR.zip.sha256"
+          echo "ARCHIVE_NAME=$DIR.zip" >> "$GITHUB_ENV"
+          echo "CHECKSUM_NAME=$DIR.zip.sha256" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: plugin-windows-x64-pv${{ matrix.paraview_series }}
+          path: |
+            ${{ env.ARCHIVE_NAME }}
+            ${{ env.CHECKSUM_NAME }}
+          if-no-files-found: error
+          retention-days: 7

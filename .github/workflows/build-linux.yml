@@ -1,0 +1,100 @@
+name: Build Linux x86_64 (ParaView 5.13-6.1)
+
+# Kitware's official Linux binaries require plugins built in the same release
+# environment. These immutable paraview_org-plugin-devel images are published
+# specifically for building binary-compatible plugins; using a normal Ubuntu
+# SDK build can produce a plugin that compiles but fails against the download.
+
+on:
+  pull_request:
+    paths:
+      - .github/INSTALL_PLUGIN.md
+      - .github/scripts/build-linux-plugin.sh
+      - .github/workflows/build-linux.yml
+      - CMakeLists.txt
+      - CMake/**
+      - LICENSE
+      - LICENSES/**
+      - Plugins/**
+      - THIRD-PARTY-NOTICES.txt
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      package_version:
+        description: Version used in archive names; defaults to CMakeLists.txt
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-linux-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-plugin-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - paraview_version: 5.13.3
+            paraview_series: '5.13'
+            builder_image: kitware/paraview_org-plugin-devel:5.13.3@sha256:36177a24147a76a36db9cf17e55882b64351f6a8e9b8bf1aaf11ef3510ee0608
+            toolset: devtoolset-7
+          - paraview_version: 6.0.1
+            paraview_series: '6.0'
+            builder_image: kitware/paraview_org-plugin-devel:6.0.1@sha256:b2113520d9ac56df3c07807c6f4104cb7859fb00789325e4906a3eab3367da74
+            toolset: gcc-toolset-10
+          - paraview_version: 6.1.1
+            paraview_series: '6.1'
+            builder_image: kitware/paraview_org-plugin-devel:6.1.1@sha256:d6798bd1ba18c9bf3431b0809b6900536ec59ace8232343133b112f7c2dbbe9c
+            toolset: gcc-toolset-10
+    env:
+      BUILDER_IMAGE: ${{ matrix.builder_image }}
+      PACKAGE_VERSION: ${{ inputs.package_version }}
+      PARAVIEW_VERSION: ${{ matrix.paraview_version }}
+      PARAVIEW_SERIES: ${{ matrix.paraview_series }}
+      TOOLSET: ${{ matrix.toolset }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # Keep JavaScript actions on the host. In particular, the ParaView 5.13
+      # release image intentionally uses an old glibc that cannot run Node 24.
+      - name: Build and package in Kitware release environment
+        run: |
+          version="${PACKAGE_VERSION#v}"
+          if [ -z "$version" ]; then
+            version=$(sed -nE \
+              's/^project\(ParaViewMCP VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' \
+              CMakeLists.txt)
+          fi
+          test -n "$version"
+
+          archive_dir="ParaViewMCP-${version}-ParaView-${PARAVIEW_VERSION}-linux-x86_64"
+          docker run --rm \
+            --env ARCHIVE_DIR="$archive_dir" \
+            --env PARAVIEW_SERIES \
+            --volume "$GITHUB_WORKSPACE:/workspace" \
+            --workdir /workspace \
+            "$BUILDER_IMAGE" \
+            /usr/bin/scl enable "$TOOLSET" -- \
+              /bin/bash /workspace/.github/scripts/build-linux-plugin.sh
+
+          echo "ARCHIVE_NAME=${archive_dir}.tar.gz" >> "$GITHUB_ENV"
+          echo "CHECKSUM_NAME=${archive_dir}.tar.gz.sha256" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: plugin-linux-x86_64-pv${{ matrix.paraview_series }}
+          path: |
+            ${{ env.ARCHIVE_NAME }}
+            ${{ env.CHECKSUM_NAME }}
+          if-no-files-found: error
+          retention-days: 7

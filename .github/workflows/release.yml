@@ -19,6 +19,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - id: release
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
@@ -35,8 +36,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
       - name: Build package
@@ -66,155 +67,41 @@ jobs:
       - name: Publish to MCP Registry
         run: ./mcp-publisher publish
 
-  # ---------------------------------------------------------------------------
-  # Linux x86_64 — built inside the project CI container (Qt6)
-  # ---------------------------------------------------------------------------
+  # Build every supported native binary using the same reusable workflows that
+  # validate pull requests. The called workflows publish their archives as
+  # artifacts in this release run.
   build-plugin-linux:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/build-linux.yml
     permissions:
       contents: read
-    container: ghcr.io/${{ github.repository }}-ci:6.0.1
-    env:
-      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
-    steps:
-      - name: Checkout source
-        run: |
-          git clone --depth 1 --branch "$TAG_NAME" \
-            https://github.com/${{ github.repository }}.git source
+    with:
+      package_version: ${{ needs.release-please.outputs.version }}
 
-      - name: Configure
-        run: |
-          cmake \
-            -S source \
-            -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=$PWD/install \
-            -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0 \
-            -DBUILD_TESTING=OFF
-
-      - name: Build
-        run: cmake --build build --parallel $(nproc)
-
-      - name: Install
-        run: cmake --install build
-
-      - name: Package tarball
-        run: |
-          VERSION="${TAG_NAME#v}"
-          ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-linux-x86_64"
-          mkdir -p "${ARCHIVE_DIR}"
-          cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
-          cp install/lib/paraview-6.0/plugins/ParaViewMCP.plugins.xml "${ARCHIVE_DIR}/"
-          cp source/LICENSE "${ARCHIVE_DIR}/"
-          cp source/THIRD-PARTY-NOTICES.txt "${ARCHIVE_DIR}/"
-          cp -r source/LICENSES "${ARCHIVE_DIR}/"
-          cp source/.github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
-          tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
-          echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: plugin-linux-x86_64
-          path: ${{ env.ARCHIVE_NAME }}
-          if-no-files-found: error
-
-  # ---------------------------------------------------------------------------
-  # macOS arm64 — native build on Apple Silicon runner
-  # ---------------------------------------------------------------------------
   build-plugin-macos:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: macos-14
-    timeout-minutes: 120
+    uses: ./.github/workflows/build-macos.yml
     permissions:
       contents: read
-    env:
-      PARAVIEW_VERSION: v6.0.1
-      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    with:
+      package_version: ${{ needs.release-please.outputs.version }}
 
-      - name: Install dependencies
-        run: brew install cmake ninja qt@6
-
-      - name: Cache ParaView SDK
-        id: cache-paraview
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-        with:
-          path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_VERSION }}-macos-arm64-qt6-${{ hashFiles('.github/patches/**') }}
-
-      - name: Build ParaView SDK
-        if: steps.cache-paraview.outputs.cache-hit != 'true'
-        run: |
-          git clone --recursive --branch ${{ env.PARAVIEW_VERSION }} --depth 1 \
-            https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src
-          patch -d /tmp/paraview-src -p1 < "$GITHUB_WORKSPACE/.github/patches/paraview-6.0.1-qt6-qflags.patch"
-          cmake \
-            -S /tmp/paraview-src \
-            -B /tmp/paraview-build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/tmp/paraview-sdk \
-            -DBUILD_SHARED_LIBS=ON \
-            -DBUILD_TESTING=OFF \
-            -DPARAVIEW_BUILD_QT_GUI=ON \
-            -DPARAVIEW_USE_QT=ON \
-            -DPARAVIEW_ENABLE_PYTHON=ON \
-            -DPARAVIEW_USE_MPI=OFF \
-            -DPARAVIEW_ENABLE_WEB=OFF \
-            -DPARAVIEW_ENABLE_EXAMPLES=OFF \
-            -DVTK_WRAP_PYTHON=ON \
-            -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
-          cmake --build /tmp/paraview-build --parallel $(sysctl -n hw.ncpu)
-          cmake --install /tmp/paraview-build
-
-      - name: Configure
-        run: |
-          cmake \
-            -S . \
-            -B build \
-            -G Ninja \
-            -DCMAKE_PREFIX_PATH="/tmp/paraview-sdk;$(brew --prefix qt@6)" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=$PWD/install \
-            -DBUILD_TESTING=OFF
-
-      - name: Build
-        run: cmake --build build --parallel $(sysctl -n hw.ncpu)
-
-      - name: Install
-        run: cmake --install build
-
-      - name: Package tarball
-        run: |
-          VERSION="${TAG_NAME#v}"
-          ARCHIVE_DIR="ParaViewMCP-${VERSION}-ParaView-6.0.1-macos-arm64"
-          mkdir -p "${ARCHIVE_DIR}"
-          cp install/lib/paraview-6.0/plugins/ParaViewMCP/ParaViewMCP.so "${ARCHIVE_DIR}/"
-          cp install/lib/paraview-6.0/plugins/ParaViewMCP.plugins.xml "${ARCHIVE_DIR}/"
-          cp LICENSE "${ARCHIVE_DIR}/"
-          cp THIRD-PARTY-NOTICES.txt "${ARCHIVE_DIR}/"
-          cp -r LICENSES "${ARCHIVE_DIR}/"
-          cp .github/INSTALL_PLUGIN.md "${ARCHIVE_DIR}/INSTALL.md"
-          tar czf "${ARCHIVE_DIR}.tar.gz" "${ARCHIVE_DIR}"
-          echo "ARCHIVE_NAME=${ARCHIVE_DIR}.tar.gz" >> $GITHUB_ENV
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: plugin-macos-arm64
-          path: ${{ env.ARCHIVE_NAME }}
-          if-no-files-found: error
+  build-plugin-windows:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    uses: ./.github/workflows/build-windows.yml
+    permissions:
+      contents: read
+    with:
+      package_version: ${{ needs.release-please.outputs.version }}
 
   # ---------------------------------------------------------------------------
   # Upload all platform binaries to the GitHub Release
   # ---------------------------------------------------------------------------
   upload-plugin-binaries:
-    needs: [release-please, build-plugin-linux, build-plugin-macos]
+    needs: [release-please, build-plugin-linux, build-plugin-macos, build-plugin-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -230,4 +117,7 @@ jobs:
       - name: Upload to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$TAG_NAME" *.tar.gz --repo "${{ github.repository }}"
+        run: |
+          gh release upload "$TAG_NAME" \
+            ./*.tar.gz ./*.zip ./*.sha256 \
+            --repo "${{ github.repository }}"

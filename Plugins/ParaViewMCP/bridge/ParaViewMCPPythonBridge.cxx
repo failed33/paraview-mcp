@@ -1,18 +1,10 @@
+#include <Python.h>
+
 #include "ParaViewMCPPythonBridge.h"
 
 #include "pqPVApplicationCore.h"
 #include "pqPythonManager.h"
 #include "vtkPythonInterpreter.h"
-
-#ifdef slots
-#define PARAVIEW_MCP_RESTORE_QT_SLOTS
-#undef slots
-#endif
-#include <Python.h>
-#ifdef PARAVIEW_MCP_RESTORE_QT_SLOTS
-#define slots Q_SLOTS
-#undef PARAVIEW_MCP_RESTORE_QT_SLOTS
-#endif
 
 #include <QByteArray>
 #include <QJsonArray>

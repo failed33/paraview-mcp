@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 license = {text = "MIT"}
 dependencies = [
-    "fastmcp>=3.0.0,<4",
+    "fastmcp>=3.4.7,<4",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -35,13 +35,12 @@ where = ["src"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.15.4,<0.16",
-    "pyrefly>=0.54.0,<0.55",
-    "pytest",
-    "pytest-cov",
-    "pip-licenses>=5.0",
-    "licensecheck>=2025.1",
-    "fastmcp>=3.0.0,<4",
+    "ruff>=0.16.2,<0.17",
+    "pyrefly>=1.2.0,<2",
+    "pytest>=9.1.1,<10",
+    "pytest-cov>=7.1.0,<8",
+    "pip-licenses>=5.5.5,<6",
+    "licensecheck>=2026.0.8,<2027",
 ]
 
 [tool.ruff]

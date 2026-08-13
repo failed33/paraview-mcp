@@ -5,6 +5,7 @@
 #include "bridge/ParaViewMCPBridgeController.h"
 
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -160,26 +161,46 @@ void ParaViewMCPPopup::showRelativeTo(QWidget* anchor)
 {
   this->refreshFromController();
 
-  if (anchor != nullptr)
+  // Make sure the frame has been laid out so its size is valid before we use it
+  // for positioning (otherwise it can show up tiny on the first open).
+  this->ensurePolished();
+  this->adjustSize();
+  const QSize popupSize = this->sizeHint().expandedTo(this->size());
+
+  QScreen* screen =
+    (anchor != nullptr && anchor->screen() != nullptr) ? anchor->screen() : this->screen();
+  if (screen == nullptr)
   {
-    QPoint pos = anchor->mapToGlobal(QPoint(0, anchor->height()));
-    QScreen* screen = anchor->screen();
-    if (screen != nullptr)
-    {
-      const QRect available = screen->availableGeometry();
-      if (pos.x() + this->width() > available.right())
-      {
-        pos.setX(available.right() - this->width());
-      }
-      if (pos.y() + this->sizeHint().height() > available.bottom())
-      {
-        pos.setY(anchor->mapToGlobal(QPoint(0, 0)).y() - this->sizeHint().height());
-      }
-    }
-    this->move(pos);
+    screen = QGuiApplication::primaryScreen();
+  }
+  const QRect available =
+    (screen != nullptr) ? screen->availableGeometry() : QRect(0, 0, 1024, 768);
+
+  QPoint pos;
+  // A small anchor (e.g. the toolbar button) acts as a drop-down origin; a large
+  // anchor (e.g. the ParaView main window, as used by the Tools menu) or no
+  // anchor at all centers the popup instead of dropping it off a corner.
+  if (anchor != nullptr && anchor->height() <= 2 * popupSize.height())
+  {
+    pos = anchor->mapToGlobal(QPoint(0, anchor->height()));
+  }
+  else
+  {
+    const QRect ref =
+      (anchor != nullptr) ? QRect(anchor->mapToGlobal(QPoint(0, 0)), anchor->size()) : available;
+    pos = ref.center() - QPoint(popupSize.width() / 2, popupSize.height() / 2);
   }
 
+  // Keep the popup fully within the screen's available area.
+  const int maxX = qMax(available.left(), available.x() + available.width() - popupSize.width());
+  const int maxY = qMax(available.top(), available.y() + available.height() - popupSize.height());
+  pos.setX(qBound(available.left(), pos.x(), maxX));
+  pos.setY(qBound(available.top(), pos.y(), maxY));
+
+  this->move(pos);
   this->show();
+  this->raise();
+  this->activateWindow();
 }
 
 void ParaViewMCPPopup::refreshFromController()

@@ -62,7 +62,7 @@ class DecodePayloadEdgeTests(unittest.TestCase):
 
     def test_rejects_non_dict_json(self) -> None:
         with self.assertRaises(ProtocolError) as ctx:
-            decode_payload(b'[1, 2, 3]')
+            decode_payload(b"[1, 2, 3]")
         self.assertIn("JSON object", str(ctx.exception))
 
     def test_rejects_json_string(self) -> None:
@@ -351,46 +351,44 @@ class RoundTripEdgeTests(unittest.TestCase):
 class ValidateResponseIdTests(unittest.TestCase):
     def test_rejects_mismatch(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "mismatched"):
-            ParaViewConnection._validate_response_id(
-                {"request_id": "abc"}, "xyz"
-            )
+            ParaViewConnection._validate_response_id({"request_id": "abc"}, "xyz")
 
 
 class UnwrapResultEdgeTests(unittest.TestCase):
     def test_rejects_non_dict_success_result(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "non-object"):
-            ParaViewConnection._unwrap_result(
-                {"status": "success", "result": "a string"}
-            )
+            ParaViewConnection._unwrap_result({"status": "success", "result": "a string"})
 
     def test_includes_error_details_as_json(self) -> None:
         with self.assertRaises(ParaViewCommandError) as ctx:
-            ParaViewConnection._unwrap_result({
-                "status": "error",
-                "error": {
-                    "code": "DETAIL_ERR",
-                    "message": "has details",
-                    "details": {"key": "value"},
-                },
-            })
+            ParaViewConnection._unwrap_result(
+                {
+                    "status": "error",
+                    "error": {
+                        "code": "DETAIL_ERR",
+                        "message": "has details",
+                        "details": {"key": "value"},
+                    },
+                }
+            )
         self.assertIn("key", ctx.exception.traceback_text)
 
     def test_rejects_malformed_error_payload(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "malformed"):
-            ParaViewConnection._unwrap_result(
-                {"status": "error", "error": "not a dict"}
-            )
+            ParaViewConnection._unwrap_result({"status": "error", "error": "not a dict"})
 
     def test_falls_back_to_traceback_when_no_details(self) -> None:
         with self.assertRaises(ParaViewCommandError) as ctx:
-            ParaViewConnection._unwrap_result({
-                "status": "error",
-                "error": {
-                    "code": "TB_ERR",
-                    "message": "has traceback",
-                    "traceback": "Traceback (most recent call last):\n  ...",
-                },
-            })
+            ParaViewConnection._unwrap_result(
+                {
+                    "status": "error",
+                    "error": {
+                        "code": "TB_ERR",
+                        "message": "has traceback",
+                        "traceback": "Traceback (most recent call last):\n  ...",
+                    },
+                }
+            )
         self.assertIn("Traceback", ctx.exception.traceback_text)
 
 
@@ -494,7 +492,9 @@ class ExecuteCodeErrorTests(unittest.TestCase):
             def send_command(self, cmd, params=None):
                 return {"error": "NameError: x", "traceback": "  File ...\nNameError: x"}
 
-        with patch("paraview_mcp.server.get_paraview_connection", return_value=ErrorResultConnection()):
+        with patch(
+            "paraview_mcp.server.get_paraview_connection", return_value=ErrorResultConnection()
+        ):
             result = execute_paraview_code(None, "print(x)")
 
         self.assertFalse(result["success"])
@@ -506,7 +506,9 @@ class ExecuteCodeErrorTests(unittest.TestCase):
             def send_command(self, cmd, params=None):
                 return {"error": "NameError: x"}
 
-        with patch("paraview_mcp.server.get_paraview_connection", return_value=ErrorResultConnection()):
+        with patch(
+            "paraview_mcp.server.get_paraview_connection", return_value=ErrorResultConnection()
+        ):
             result = execute_paraview_code(None, "print(x)")
 
         self.assertFalse(result["success"])
@@ -627,11 +629,10 @@ def _make_patched_server():
 class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls):
-        cls._patcher = patch(
-            "paraview_mcp.server.get_paraview_connection", _get_mock_connection
-        )
+        cls._patcher = patch("paraview_mcp.server.get_paraview_connection", _get_mock_connection)
         cls._patcher.start()
         from paraview_mcp.server import mcp
+
         cls.server = mcp
 
     @classmethod
@@ -671,9 +672,12 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         def failing_connection():
             class _Failing:
-                def ping(self): pass
+                def ping(self):
+                    pass
+
                 def send_command(self, cmd, params=None):
                     raise ParaViewCommandError("ERR", "test error", "tb")
+
             return _Failing()
 
         with patch("paraview_mcp.server.get_paraview_connection", failing_connection):

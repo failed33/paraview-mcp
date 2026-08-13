@@ -4,7 +4,7 @@ Thank you for your interest in contributing to ParaView MCP!
 
 ## Prerequisites
 
-- [ParaView 6.0.1](https://www.paraview.org/download/) SDK (for plugin development)
+- [ParaView 5.13.3, 6.0.1, or 6.1.1](https://www.paraview.org/download/) SDK (for plugin development)
 - [CMake](https://cmake.org/) 3.24+
 - [Ninja](https://ninja-build.org/) build system
 - [Python](https://www.python.org/) 3.13+
@@ -24,7 +24,7 @@ pre-commit install
 pre-commit install --hook-type commit-msg
 
 # Build C++ plugin
-cmake --preset dev -DParaView_DIR=/path/to/paraview-6.0/lib/cmake/paraview-6.0
+cmake --preset dev -DParaView_DIR=/path/to/paraview/lib/cmake/paraview-X.Y
 cmake --build --preset dev
 
 # Set up Python server
@@ -34,11 +34,12 @@ uv sync
 
 ## Building the Plugin
 
-Build against your ParaView 6.0.1 development install:
+Build against a supported ParaView development install. Use the same major.minor
+series as the ParaView binary that will load the plugin:
 
 ```bash
 cmake -S . -B build -GNinja \
-  -DParaView_DIR=/path/to/paraview-6.0/lib/cmake/paraview-6.0 \
+  -DParaView_DIR=/path/to/paraview/lib/cmake/paraview-X.Y \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=dist
 
@@ -49,7 +50,7 @@ cmake --install build
 Or use the CMake presets:
 
 ```bash
-cmake --preset dev -DParaView_DIR=/path/to/paraview-6.0/lib/cmake/paraview-6.0
+cmake --preset dev -DParaView_DIR=/path/to/paraview/lib/cmake/paraview-X.Y
 cmake --build --preset dev
 ```
 
@@ -68,7 +69,7 @@ cmake --build --preset dev
 ### Loading the Plugin
 
 1. Open **Tools > Manage Plugins** in ParaView.
-2. Load the plugin library from `dist/lib/paraview-6.0/plugins/ParaViewMCP/`.
+2. Load the plugin library from `dist/lib/paraview-X.Y/plugins/ParaViewMCP/`.
 3. Enable **Auto Load**.
 4. Open **Tools > ParaView MCP**.
 5. Click **Start Server**.

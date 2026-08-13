@@ -4,7 +4,13 @@
 #include "ParaViewMCPStateAppearance.h"
 #include "bridge/ParaViewMCPBridgeController.h"
 
+#include <vtkPVVersionQuick.h>
+
+#if PARAVIEW_VERSION_MAJOR >= 6
 #include <pqCoreUtilities.h>
+#else
+#include <QPalette>
+#endif
 
 #include <QEvent>
 #include <QHBoxLayout>
@@ -83,9 +89,13 @@ void ParaViewMCPToolbar::changeEvent(QEvent* event)
 
 void ParaViewMCPToolbar::updateIcon()
 {
-  const QString iconPath = pqCoreUtilities::isDarkTheme()
-                             ? QStringLiteral(":/ParaViewMCP/mcp-icon-for-dark-theme.png")
-                             : QStringLiteral(":/ParaViewMCP/mcp-icon-for-light-theme.png");
+#if PARAVIEW_VERSION_MAJOR >= 6
+  const bool darkTheme = pqCoreUtilities::isDarkTheme();
+#else
+  const bool darkTheme = this->palette().color(QPalette::Window).lightness() < 128;
+#endif
+  const QString iconPath = darkTheme ? QStringLiteral(":/ParaViewMCP/mcp-icon-for-dark-theme.png")
+                                     : QStringLiteral(":/ParaViewMCP/mcp-icon-for-light-theme.png");
   this->Button->setIcon(QIcon(iconPath));
 }
 
