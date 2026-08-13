@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.1](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.0...ParaViewMCP-v0.2.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **ci:** validate release-compatible pull request titles ([#35](https://github.com/failed33/paraview-mcp/issues/35)) ([d586668](https://github.com/failed33/paraview-mcp/commit/d5866687367596403b2c48db3dd99305cfa9cdf7))
+* **plugin:** keep the toolbar popup fully visible ([69bb5a2](https://github.com/failed33/paraview-mcp/commit/69bb5a2d6142ebd3451b83bca3b1e33b9cc0d145))
+* **plugin:** support native artifacts for ParaView 5.13-6.1 ([69bb5a2](https://github.com/failed33/paraview-mcp/commit/69bb5a2d6142ebd3451b83bca3b1e33b9cc0d145))
+* **windows:** link the ParaView Python library explicitly ([69bb5a2](https://github.com/failed33/paraview-mcp/commit/69bb5a2d6142ebd3451b83bca3b1e33b9cc0d145))
+
+
+### Documentation
+
+* update native artifact and installation guidance ([69bb5a2](https://github.com/failed33/paraview-mcp/commit/69bb5a2d6142ebd3451b83bca3b1e33b9cc0d145))
+
 ## [0.2.0](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.1.5...ParaViewMCP-v0.2.0) (2026-03-02)
 
 
