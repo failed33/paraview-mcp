@@ -211,20 +211,21 @@ jobs:
 
       # The plugin links Qt by absolute path (aqt's /tmp/Qt/...). Loaded into the
       # official ParaView .app — which bundles its OWN Qt — those paths don't
-      # exist on the user's machine. Rewrite the Qt refs to @rpath so they resolve
-      # to ParaView's bundled Qt, then re-sign (install_name_tool invalidates the
-      # signature; arm64 refuses to load an unsigned dylib). Official ParaView
-      # macOS apps package Python as Contents/Libraries/libpythonX.Y.dylib, not
-      # as a framework. Use @executable_path so the reference resolves from the
-      # ParaView executable regardless of where the external plugin is stored.
+      # exist on the user's machine. Rewrite Qt directly to Contents/Frameworks;
+      # an external plugin cannot rely on ParaView's framework rpath being in its
+      # own Mach-O load-command chain. Official ParaView macOS apps package Python
+      # as Contents/Libraries/libpythonX.Y.dylib. Use @executable_path for both so
+      # they resolve from the ParaView executable regardless of where the external
+      # plugin is stored. Re-sign afterwards because install_name_tool invalidates
+      # the signature and arm64 refuses to load an unsigned dylib.
       - name: Relink Qt + Python to ParaView's bundled copies
         run: |
           SO=$(find install -name ParaViewMCP.so -print -quit)
           test -n "$SO"
-          otool -L "$SO" | grep -oE '/[^ @][^ ]*/Qt[A-Za-z]+\.framework/Versions/[^/]+/Qt[A-Za-z]+' | while read -r old; do
+          otool -L "$SO" | awk 'NR > 1 && $1 ~ /Qt[A-Za-z0-9]+\.framework\/Versions\/[^/]+\/Qt/ {print $1}' | while read -r old; do
             fw=$(basename "$old")
             framework_version=$(sed -E 's#^.*/Versions/([^/]+)/.*#\1#' <<< "$old")
-            new="@rpath/${fw}.framework/Versions/${framework_version}/${fw}"
+            new="@executable_path/../Frameworks/${fw}.framework/Versions/${framework_version}/${fw}"
             install_name_tool -change "$old" "$new" "$SO"
             echo "relinked: $old -> $new"
           done
@@ -234,16 +235,23 @@ jobs:
             install_name_tool -change "$old" "$PY_REF" "$SO"
             echo "relinked python: $old -> $PY_REF"
           done
+          # Repeated install-name edits can leave an existing embedded signature
+          # structurally stale. Remove it before applying one fresh ad-hoc signature.
+          codesign --remove-signature "$SO" 2>/dev/null || true
           codesign --force --sign - "$SO"
-          remaining=$(otool -L "$SO" | grep -cE '/[^ @][^ ]*/Qt[A-Za-z]+\.framework' || true)
-          echo "remaining absolute Qt refs: $remaining"
-          test "$remaining" -eq 0
+          codesign --verify --strict --verbose=2 "$SO"
+          bad_qt=$(otool -L "$SO" | awk \
+            'NR > 1 && $1 ~ /Qt[A-Za-z0-9]+\.framework/ && $1 !~ /^@executable_path\/\.\.\/Frameworks\// {print $1}' | wc -l | tr -d ' ')
+          echo "unexpected Qt refs: $bad_qt"
+          test "$bad_qt" -eq 0
           bad_py=$(otool -L "$SO" | awk -v ref="$PY_REF" \
             'NR > 1 && ($1 ~ /Python\.framework|libpython3/) && $1 != ref {print $1}' | wc -l | tr -d ' ')
           echo "unexpected Python refs: $bad_py"
           test "$bad_py" -eq 0
           echo "=== Python refs (must be $PY_REF, or none if resolved dynamically) ==="
           otool -L "$SO" | grep -i python || echo "(none)"
+          echo "=== Qt refs (must resolve from ParaView.app/Contents/Frameworks) ==="
+          otool -L "$SO" | grep -E 'Qt[A-Za-z0-9]+\.framework' || echo "(none)"
           echo "=== qt_version_tag required by the plugin ==="
           nm -u "$SO" | grep -i qt_version_tag || true
 
