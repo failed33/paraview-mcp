@@ -16,6 +16,7 @@ from support import install_fastmcp_stub
 install_fastmcp_stub()
 
 import paraview_mcp.server as server_module  # noqa: E402
+from paraview_mcp import __version__  # noqa: E402
 
 
 class RuntimeConnection:
@@ -81,6 +82,9 @@ class ServerRuntimeTests(unittest.TestCase):
             server_module.main()
 
         run_mock.assert_called_once_with()
+
+    def test_fastmcp_reports_package_version(self) -> None:
+        self.assertEqual(server_module.mcp.version, __version__)
 
 
 if __name__ == "__main__":
