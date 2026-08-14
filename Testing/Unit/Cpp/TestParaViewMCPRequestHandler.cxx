@@ -7,6 +7,10 @@
 #include <QObject>
 #include <QtTest>
 
+#ifndef PARAVIEW_MCP_PLUGIN_VERSION
+#define PARAVIEW_MCP_PLUGIN_VERSION "0.0.0"
+#endif
+
 class TestParaViewMCPRequestHandler : public QObject
 {
   Q_OBJECT
@@ -53,6 +57,8 @@ void TestParaViewMCPRequestHandler::handshakeSucceeds()
   const QJsonObject handshake = result.Response.value(QStringLiteral("result")).toObject();
   QCOMPARE(handshake.value(QStringLiteral("protocol_version")).toInt(),
            ParaViewMCP::ProtocolVersion);
+  QCOMPARE(handshake.value(QStringLiteral("plugin_version")).toString(),
+           QString::fromLatin1(PARAVIEW_MCP_PLUGIN_VERSION));
   QVERIFY(handshake.value(QStringLiteral("python_ready")).toBool());
 }
 

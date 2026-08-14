@@ -116,6 +116,11 @@ target_link_libraries(
     VTK::PythonInterpreter
     ${paraview_mcp_qt_targets}
 )
+target_compile_definitions(
+  ParaViewMCPBridgeCore
+  PUBLIC
+    PARAVIEW_MCP_PLUGIN_VERSION="${PROJECT_VERSION}"
+)
 
 paraview_mcp_configure_target(ParaViewMCPBridgeCore)
 

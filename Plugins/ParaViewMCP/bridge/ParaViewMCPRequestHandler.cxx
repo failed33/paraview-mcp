@@ -8,7 +8,11 @@
 
 namespace
 {
-  constexpr const char* PluginVersion = "0.1.0";
+#ifndef PARAVIEW_MCP_PLUGIN_VERSION
+#define PARAVIEW_MCP_PLUGIN_VERSION "0.0.0"
+#endif
+
+  constexpr const char* PluginVersion = PARAVIEW_MCP_PLUGIN_VERSION;
 }
 
 ParaViewMCPRequestHandler::ParaViewMCPRequestHandler(IParaViewMCPPythonBridge& pythonBridge)
