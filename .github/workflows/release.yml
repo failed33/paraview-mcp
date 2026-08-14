@@ -128,6 +128,7 @@ jobs:
           CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
           KEYCHAIN_PATH="$RUNNER_TEMP/release-signing.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
 
           printf '%s' "$APPLE_CERTIFICATE_P12" | base64 --decode > "$CERTIFICATE_PATH"
           chmod 600 "$CERTIFICATE_PATH"
@@ -149,8 +150,6 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH"
           security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
             | grep -F "$APPLE_SIGNING_IDENTITY"
-
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
 
       - name: Sign, package, notarize, and staple macOS plugins
         env:
@@ -260,7 +259,9 @@ jobs:
       - name: Remove ephemeral signing material
         if: ${{ always() }}
         run: |
-          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          if [ -n "${KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          fi
           rm -f "$RUNNER_TEMP/developer-id.p12"
           rm -f "$RUNNER_TEMP/ApiKey_${APPLE_API_KEY_ID}.p8"
 

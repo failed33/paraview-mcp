@@ -11,9 +11,10 @@
 ## Installation
 
 Linux and Windows users should extract the complete archive before loading the plugin.
-On macOS, open the signed and notarized `.dmg`, then copy the contained plugin directory
-to a persistent writable location before loading it. Keep the plugin library and
-`ParaViewMCP.plugins.xml` together in the same directory.
+macOS pull-request test artifacts are also `.tar.gz` archives and should be extracted
+completely. For a macOS release, open the signed and notarized `.dmg`, then copy the
+contained plugin directory to a persistent writable location before loading it. Keep
+the plugin library and `ParaViewMCP.plugins.xml` together in the same directory.
 
 ### Option A: Load Manually
 
