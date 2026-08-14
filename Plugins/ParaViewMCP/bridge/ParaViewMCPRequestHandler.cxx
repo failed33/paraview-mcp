@@ -9,11 +9,11 @@
 namespace
 {
 #ifndef PARAVIEW_MCP_PLUGIN_VERSION
-#define PARAVIEW_MCP_PLUGIN_VERSION "0.0.0"
+#error "PARAVIEW_MCP_PLUGIN_VERSION must be supplied by the build"
 #endif
 
   constexpr const char* PluginVersion = PARAVIEW_MCP_PLUGIN_VERSION;
-}
+} // namespace
 
 ParaViewMCPRequestHandler::ParaViewMCPRequestHandler(IParaViewMCPPythonBridge& pythonBridge)
     : PythonBridge(pythonBridge)

@@ -48,6 +48,7 @@ def _load_real_modules():
         client_cls = fastmcp_mod.Client
         mcp_instance = server_mod.mcp
         error_cls = server_mod.ParaViewCommandError
+        package_version = importlib.import_module("paraview_mcp").__version__
 
         # Capture all freshly-loaded modules related to fastmcp / paraview_mcp
         real_modules = {
@@ -62,13 +63,19 @@ def _load_real_modules():
                 sys.modules.pop(k, None)
         sys.modules.update(saved)
 
-    return real_modules, client_cls, mcp_instance, error_cls
+    return real_modules, client_cls, mcp_instance, error_cls, package_version
 
 
 try:
-    _real_modules, _Client, _mcp, _ParaViewCommandError = _load_real_modules()
+    _real_modules, _Client, _mcp, _ParaViewCommandError, _package_version = _load_real_modules()
 except (ModuleNotFoundError, ImportError):  # fastmcp not installed — tests will be skipped
-    _real_modules, _Client, _mcp, _ParaViewCommandError = {}, None, None, None
+    _real_modules, _Client, _mcp, _ParaViewCommandError, _package_version = (
+        {},
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 class _MockConnection:
@@ -149,6 +156,13 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(tools), 3)
         names = {t.name for t in tools}
         self.assertEqual(names, {"execute_paraview_code", "get_pipeline_info", "get_screenshot"})
+
+    async def test_initialize_reports_package_version(self):
+        async with _Client(self.server) as client:
+            initialize_result = client.initialize_result
+
+        self.assertIsNotNone(initialize_result)
+        self.assertEqual(initialize_result.serverInfo.version, _package_version)
 
     async def test_tool_schemas_have_descriptions(self):
         """Every registered tool exposes a non-empty description."""

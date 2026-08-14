@@ -46,6 +46,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: version-consistency
+        name: version-consistency
+        language: system
+        entry: python3 scripts/check-versions.py
+        pass_filenames: false
+        always_run: true
       - id: license-compatibility
         name: license-compatibility
         language: system

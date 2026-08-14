@@ -17,6 +17,7 @@ from typing import Any
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 
+from . import __version__
 from .protocol import (
     DEFAULT_HOST,
     DEFAULT_PORT,
@@ -248,7 +249,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
         logger.info("ParaView MCP server stopped")
 
 
-mcp = FastMCP("ParaViewMCP", lifespan=server_lifespan)
+mcp = FastMCP("ParaViewMCP", version=__version__, lifespan=server_lifespan)
 
 
 def _to_pretty_json(payload: dict[str, Any]) -> str:
