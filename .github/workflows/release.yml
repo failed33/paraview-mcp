@@ -11,7 +11,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-versions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - name: Verify release versions are aligned
+        run: python scripts/check-versions.py
+      - name: Verify Python lockfile is current
+        run: uv lock --project Wrapping/Python/MCPServer --check
+
   release-please:
+    needs: verify-versions
     runs-on: ubuntu-latest
     permissions:
       contents: write

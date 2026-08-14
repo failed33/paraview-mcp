@@ -32,7 +32,7 @@
         },
         {
           "type": "generic",
-          "path": "Plugins/ParaViewMCP/CMakeLists.txt"
+          "path": "Wrapping/Python/MCPServer/uv.lock"
         },
         {
           "type": "json",

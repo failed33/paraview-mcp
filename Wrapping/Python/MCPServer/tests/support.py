@@ -30,7 +30,7 @@ def install_fastmcp_stub() -> None:
 
     class _FastMCP:
         def __init__(self, *_args: object, **_kwargs: object) -> None:
-            pass
+            self.version = _kwargs.get("version")
 
         def tool(self):
             def decorator(func):

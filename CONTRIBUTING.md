@@ -144,3 +144,10 @@ Releases are automated via [release-please](https://github.com/googleapis/releas
 - `fix:` patches (0.1.0 -> 0.1.1)
 - `feat:` minor releases (0.1.0 -> 0.2.0)
 - `feat!:` or `BREAKING CHANGE` footer: major releases (0.1.0 -> 1.0.0)
+
+Release Please updates the CMake project, Python package/runtime metadata,
+`uv.lock`, and MCP Registry metadata together. The native plugin metadata and
+handshake derive from the CMake project version, while FastMCP derives from the
+Python package version. Run `python3 scripts/check-versions.py` to verify the
+contract locally; CI and the release workflow run the same check before any
+tag, PyPI upload, registry publication, or native artifact build.
