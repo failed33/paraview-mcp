@@ -165,9 +165,11 @@ jobs:
           chmod 600 "$API_KEY_PATH"
           mkdir -p "$WORK_ROOT" "$OUTPUT_DIR" "$LOG_DIR"
 
+          set -- unsigned-macos/*.tar.gz
+          test -f "$1"
+          expected_archive_count=$#
           archive_count=0
-          for archive in unsigned-macos/*.tar.gz; do
-            test -f "$archive"
+          for archive in "$@"; do
             archive_count=$((archive_count + 1))
             archive_name="$(basename "$archive" .tar.gz)"
             work_dir="$WORK_ROOT/$archive_name"
@@ -234,7 +236,7 @@ jobs:
             )
           done
 
-          test "$archive_count" -eq 3
+          test "$archive_count" -eq "$expected_archive_count"
 
       - name: Upload signed and notarized macOS artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0

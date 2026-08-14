@@ -222,7 +222,8 @@ jobs:
         run: |
           SO=$(find install -name ParaViewMCP.so -print -quit)
           test -n "$SO"
-          otool -L "$SO" | awk 'NR > 1 && $1 ~ /Qt[A-Za-z0-9]+\.framework\/Versions\/[^/]+\/Qt/ {print $1}' | while read -r old; do
+          otool -L "$SO" | awk \
+            'NR > 1 && $1 ~ /Qt[A-Za-z0-9]+[.]framework/ && index($1, "/Versions/") {print $1}' | while read -r old; do
             fw=$(basename "$old")
             framework_version=$(sed -E 's#^.*/Versions/([^/]+)/.*#\1#' <<< "$old")
             new="@executable_path/../Frameworks/${fw}.framework/Versions/${framework_version}/${fw}"
