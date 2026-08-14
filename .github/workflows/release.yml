@@ -78,6 +78,7 @@ jobs:
       contents: read
     with:
       package_version: ${{ needs.release-please.outputs.version }}
+      verify_official_runtime: true
 
   build-plugin-macos:
     needs: release-please
@@ -87,6 +88,7 @@ jobs:
       contents: read
     with:
       package_version: ${{ needs.release-please.outputs.version }}
+      verify_official_runtime: true
 
   build-plugin-windows:
     needs: release-please
@@ -96,6 +98,7 @@ jobs:
       contents: read
     with:
       package_version: ${{ needs.release-please.outputs.version }}
+      verify_official_runtime: true
 
   # Keep signing credentials out of pull-request builds. Release builds first
   # produce the same ad-hoc-signed macOS artifacts validated by PRs, then this

@@ -16,14 +16,26 @@ on:
       - LICENSE
       - LICENSES/**
       - Plugins/**
+      - Testing/Smoke/**
       - THIRD-PARTY-NOTICES.txt
   workflow_dispatch:
+    inputs:
+      verify_official_runtime:
+        description: Load each package with the matching official ParaView runtime
+        required: false
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       package_version:
         description: Version used in archive names; defaults to CMakeLists.txt
         required: false
         type: string
+      verify_official_runtime:
+        description: Load each package with the matching official ParaView runtime
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -43,14 +55,20 @@ jobs:
         include:
           - paraview_version: 5.13.3
             paraview_series: '5.13'
+            python_version: '3.10'
+            runtime_md5: '7cff200a718e7af717f745d5b65beb28'
             builder_image: kitware/paraview_org-plugin-devel:5.13.3@sha256:36177a24147a76a36db9cf17e55882b64351f6a8e9b8bf1aaf11ef3510ee0608
             toolset: devtoolset-7
           - paraview_version: 6.0.1
             paraview_series: '6.0'
+            python_version: '3.12'
+            runtime_md5: 'de2be9dcb3bced49f4959bd932aabc0a'
             builder_image: kitware/paraview_org-plugin-devel:6.0.1@sha256:b2113520d9ac56df3c07807c6f4104cb7859fb00789325e4906a3eab3367da74
             toolset: gcc-toolset-10
           - paraview_version: 6.1.1
             paraview_series: '6.1'
+            python_version: '3.12'
+            runtime_md5: '0111a422aa08ff8c9acac0e83d411a2f'
             builder_image: kitware/paraview_org-plugin-devel:6.1.1@sha256:d6798bd1ba18c9bf3431b0809b6900536ec59ace8232343133b112f7c2dbbe9c
             toolset: gcc-toolset-10
     env:
@@ -58,6 +76,8 @@ jobs:
       PACKAGE_VERSION: ${{ inputs.package_version }}
       PARAVIEW_VERSION: ${{ matrix.paraview_version }}
       PARAVIEW_SERIES: ${{ matrix.paraview_series }}
+      PYTHON_VERSION: ${{ matrix.python_version }}
+      RUNTIME_MD5: ${{ matrix.runtime_md5 }}
       TOOLSET: ${{ matrix.toolset }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -88,6 +108,43 @@ jobs:
 
           echo "ARCHIVE_NAME=${archive_dir}.tar.gz" >> "$GITHUB_ENV"
           echo "CHECKSUM_NAME=${archive_dir}.tar.gz.sha256" >> "$GITHUB_ENV"
+
+      - name: Download matching official ParaView runtime
+        if: ${{ inputs.verify_official_runtime }}
+        run: |
+          runtime_filename="ParaView-${PARAVIEW_VERSION}-MPI-Linux-Python${PYTHON_VERSION}-x86_64.tar.gz"
+          runtime_url="https://www.paraview.org/files/v${PARAVIEW_SERIES}/${runtime_filename}"
+          runtime_archive="$RUNNER_TEMP/paraview-runtime.tar.gz"
+          curl --fail --location --retry 3 --retry-all-errors \
+            --output "$runtime_archive" \
+            "$runtime_url"
+          actual_md5="$(md5sum "$runtime_archive" | cut -d ' ' -f 1)"
+          test "$actual_md5" = "$RUNTIME_MD5"
+          sha256sum "$runtime_archive"
+
+      - name: Load packaged plugin with official ParaView
+        if: ${{ inputs.verify_official_runtime }}
+        run: |
+          docker run --rm \
+            --env ARCHIVE_NAME \
+            --env QT_QPA_PLATFORM=offscreen \
+            --volume "$GITHUB_WORKSPACE:/workspace:ro" \
+            --volume "$RUNNER_TEMP:/runtime:ro" \
+            --workdir /workspace \
+            "$BUILDER_IMAGE" \
+            /usr/bin/scl enable "$TOOLSET" -- \
+              /bin/bash -lc '
+                set -euo pipefail
+                runtime_root="$(mktemp -d)"
+                plugin_root="$(mktemp -d)"
+                tar -xzf /runtime/paraview-runtime.tar.gz -C "$runtime_root"
+                tar -xzf "/workspace/$ARCHIVE_NAME" -C "$plugin_root"
+                pvpython="$(find "$runtime_root" -path "*/bin/pvpython" -print -quit)"
+                plugin="$(find "$plugin_root" -name ParaViewMCP.so -print -quit)"
+                test -x "$pvpython"
+                test -f "$plugin"
+                "$pvpython" /workspace/Testing/Smoke/load_plugin.py "$plugin"
+              '
 
       - name: Upload build artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
