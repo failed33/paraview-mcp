@@ -10,7 +10,9 @@
 
 ## Installation
 
-Extract the complete archive before loading the plugin. Keep the plugin library and
+Linux and Windows users should extract the complete archive before loading the plugin.
+On macOS, open the signed and notarized `.dmg`, then copy the contained plugin directory
+to a persistent writable location before loading it. Keep the plugin library and
 `ParaViewMCP.plugins.xml` together in the same directory.
 
 ### Option A: Load Manually
