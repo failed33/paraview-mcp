@@ -318,7 +318,11 @@ jobs:
           shasum -a 256 "$runtime_dmg"
 
           mkdir -p "$mount_dir"
-          hdiutil attach -nobrowse -readonly -mountpoint "$mount_dir" "$runtime_dmg"
+          # Official ParaView DMGs embed an interactive redistribution license.
+          # Accept it explicitly so the non-interactive Actions runner can mount
+          # the already checksum-verified image.
+          printf 'Y\n' | hdiutil attach -nobrowse -readonly \
+            -mountpoint "$mount_dir" "$runtime_dmg"
           trap 'hdiutil detach "$mount_dir" >/dev/null' EXIT
 
           tar -xzf "$ARCHIVE_NAME" -C "$plugin_root"
