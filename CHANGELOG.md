@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.1...ParaViewMCP-v0.2.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* align release and runtime version metadata ([#38](https://github.com/failed33/paraview-mcp/issues/38)) ([4a99245](https://github.com/failed33/paraview-mcp/commit/4a9924598294eb795da64a82e2657d5f452cec81))
+* **ci:** align release pull request titles ([#40](https://github.com/failed33/paraview-mcp/issues/40)) ([9574463](https://github.com/failed33/paraview-mcp/commit/95744637b5b936806a7372e371317078535d407a))
+* **ci:** sign and notarize macOS release artifacts ([#36](https://github.com/failed33/paraview-mcp/issues/36)) ([cac6296](https://github.com/failed33/paraview-mcp/commit/cac62969c632d4c11e6637cc04ac63b1ddd8b456))
+
 ## [0.2.1](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.0...ParaViewMCP-v0.2.1) (2026-08-13)
 
 
