@@ -213,11 +213,11 @@ jobs:
       # official ParaView .app — which bundles its OWN Qt — those paths don't
       # exist on the user's machine. Rewrite the Qt refs to @rpath so they resolve
       # to ParaView's bundled Qt, then re-sign (install_name_tool invalidates the
-      # signature; arm64 refuses to load an unsigned dylib). Python refs, if the
-      # linker recorded any (VTK may instead leave Python symbols to resolve from
-      # the host process), get the same treatment: point them at the bundled
-      # Python.framework that ships in the .app's Frameworks dir next to Qt.
-      - name: Relink Qt + Python to @rpath (use ParaView's bundled copies)
+      # signature; arm64 refuses to load an unsigned dylib). Official ParaView
+      # macOS apps package Python as Contents/Libraries/libpythonX.Y.dylib, not
+      # as a framework. Use @executable_path so the reference resolves from the
+      # ParaView executable regardless of where the external plugin is stored.
+      - name: Relink Qt + Python to ParaView's bundled copies
         run: |
           SO=$(find install -name ParaViewMCP.so -print -quit)
           test -n "$SO"
@@ -228,7 +228,7 @@ jobs:
             install_name_tool -change "$old" "$new" "$SO"
             echo "relinked: $old -> $new"
           done
-          PY_REF="@rpath/Python.framework/Versions/${PYTHON_VERSION}/Python"
+          PY_REF="@executable_path/../Libraries/libpython${PYTHON_VERSION}.dylib"
           otool -L "$SO" | awk -v ref="$PY_REF" \
             'NR > 1 && ($1 ~ /Python\.framework|libpython3/) && $1 != ref {print $1}' | while read -r old; do
             install_name_tool -change "$old" "$PY_REF" "$SO"
@@ -240,7 +240,7 @@ jobs:
           test "$remaining" -eq 0
           bad_py=$(otool -L "$SO" | awk -v ref="$PY_REF" \
             'NR > 1 && ($1 ~ /Python\.framework|libpython3/) && $1 != ref {print $1}' | wc -l | tr -d ' ')
-          echo "non-@rpath Python refs: $bad_py"
+          echo "unexpected Python refs: $bad_py"
           test "$bad_py" -eq 0
           echo "=== Python refs (must be $PY_REF, or none if resolved dynamically) ==="
           otool -L "$SO" | grep -i python || echo "(none)"
