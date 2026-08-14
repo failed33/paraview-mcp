@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.2...ParaViewMCP-v0.2.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **ci:** support individual Apple notarization keys ([#41](https://github.com/failed33/paraview-mcp/issues/41)) ([8aa7f95](https://github.com/failed33/paraview-mcp/commit/8aa7f956a5c6dbd09571c71488f9516025e39b4a))
+
 ## [0.2.2](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.1...ParaViewMCP-v0.2.2) (2026-08-14)
 
 
