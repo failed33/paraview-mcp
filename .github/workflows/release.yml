@@ -125,7 +125,10 @@ jobs:
   sign-plugin-macos:
     needs: [release-please, build-plugin-macos]
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: macos-14
+    # Individual App Store Connect API keys are issuer-less and require the
+    # Xcode 26 notarytool. Older versions incorrectly require --issuer, which
+    # is valid only for team API keys.
+    runs-on: macos-26
     timeout-minutes: 120
     environment: release-signing
     permissions:
@@ -140,6 +143,21 @@ jobs:
           pattern: plugin-macos-*
           path: unsigned-macos
           merge-multiple: true
+
+      - name: Validate individual App Store Connect API credentials
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          API_KEY_PATH="$RUNNER_TEMP/ApiKey_${APPLE_API_KEY_ID}.p8"
+          echo "API_KEY_PATH=$API_KEY_PATH" >> "$GITHUB_ENV"
+          printf '%s\n' "$APPLE_API_KEY_P8" > "$API_KEY_PATH"
+          chmod 600 "$API_KEY_PATH"
+
+          xcrun notarytool --version
+          xcrun notarytool history \
+            --key "$API_KEY_PATH" \
+            --key-id "$APPLE_API_KEY_ID" \
+            --output-format json >/dev/null
 
       - name: Import Developer ID identity into an ephemeral keychain
         env:
@@ -173,16 +191,11 @@ jobs:
             | grep -F "$APPLE_SIGNING_IDENTITY"
 
       - name: Sign, package, notarize, and staple macOS plugins
-        env:
-          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
-          API_KEY_PATH="$RUNNER_TEMP/ApiKey_${APPLE_API_KEY_ID}.p8"
           WORK_ROOT="$RUNNER_TEMP/notarization"
           OUTPUT_DIR="$PWD/signed-macos"
           LOG_DIR="$PWD/notarization-logs"
 
-          printf '%s\n' "$APPLE_API_KEY_P8" > "$API_KEY_PATH"
-          chmod 600 "$API_KEY_PATH"
           mkdir -p "$WORK_ROOT" "$OUTPUT_DIR" "$LOG_DIR"
 
           set -- unsigned-macos/*.tar.gz
