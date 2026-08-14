@@ -74,6 +74,23 @@ bool ParaViewMCPPythonBridge::initialize(QString* error)
   }
 
   PyGILState_STATE gilState = PyGILState_Ensure();
+  // ParaView registers plugin-provided Python sources in vtkPVPythonModule,
+  // but its meta-path importer is installed by paraview.servermanager. A
+  // freshly started GUI may not have imported that module yet.
+  PyObject* serverManager = PyImport_ImportModule("paraview.servermanager");
+  if (serverManager == nullptr)
+  {
+    const QString pythonError = this->fetchPythonError();
+    if (error)
+    {
+      *error =
+        QStringLiteral("Unable to initialize ParaView's Python module loader: %1").arg(pythonError);
+    }
+    PyGILState_Release(gilState);
+    return false;
+  }
+  Py_DECREF(serverManager);
+
   const bool imported = this->importModule(error) && this->cacheFunctions(error);
   if (imported)
   {
