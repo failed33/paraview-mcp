@@ -42,16 +42,22 @@ Open **Tools > ParaView MCP** in ParaView, start the bridge, and connect from Cl
 
 Download a pre-built plugin binary from the [latest GitHub Release](https://github.com/failed33/paraview-mcp/releases/latest). Releases provide this matrix:
 
-| Platform | Architecture          | ParaView versions    | Archive   |
+| Platform | Architecture          | ParaView versions    | Package   |
 | -------- | --------------------- | -------------------- | --------- |
 | Linux    | x86_64                | 5.13.3, 6.0.1, 6.1.1 | `.tar.gz` |
-| macOS    | arm64 (Apple Silicon) | 5.13.3, 6.0.1, 6.1.1 | `.tar.gz` |
+| macOS    | arm64 (Apple Silicon) | 5.13.3, 6.0.1, 6.1.1 | `.dmg`    |
 | Windows  | x64                   | 5.13.3, 6.0.1, 6.1.1 | `.zip`    |
 
-Choose the archive that names your exact ParaView version and platform. Download its
-adjacent `.sha256` file, verify the archive, then extract it and follow the included
-`INSTALL.md`. Pull requests also produce the same binaries as short-lived GitHub Actions
-artifacts; GitHub Releases are the permanent distribution channel.
+Choose the package that names your exact ParaView version and platform. Download its
+adjacent `.sha256` file, verify the package, then open or extract it and follow the
+included `INSTALL.md`. Pull requests also produce corresponding platform binaries as
+short-lived GitHub Actions artifacts; GitHub Releases are the permanent distribution
+channel.
+
+macOS release images are Developer ID-signed, notarized by Apple, and include a stapled
+notarization ticket. Open the `.dmg`, copy the contained plugin directory to a persistent
+location, and load `ParaViewMCP.so` from that copied directory. Pull-request artifacts are
+unsigned test builds and remain `.tar.gz` files.
 
 Alternatively, build the plugin from source against a ParaView 5.13 or newer SDK. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for full build instructions. Binary compatibility is

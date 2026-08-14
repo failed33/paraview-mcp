@@ -23,14 +23,26 @@ on:
       - LICENSE
       - LICENSES/**
       - Plugins/**
+      - Testing/Smoke/**
       - THIRD-PARTY-NOTICES.txt
   workflow_dispatch:
+    inputs:
+      verify_official_runtime:
+        description: Load each package with the matching official ParaView runtime
+        required: false
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       package_version:
         description: Version used in archive names; defaults to CMakeLists.txt
         required: false
         type: string
+      verify_official_runtime:
+        description: Load each package with the matching official ParaView runtime
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -55,6 +67,7 @@ jobs:
             qt_arch: win64_msvc2019_64
             qt_dir: msvc2019_64
             python_version: '3.10'
+            runtime_md5: '6d91d4c8684327ca9caaa94abe769925'
           - paraview_version: v6.0.1
             paraview_commit: bdd52330012d733d3d6d85702a0498243af46272
             paraview_series: '6.0'
@@ -62,6 +75,7 @@ jobs:
             qt_arch: win64_msvc2022_64
             qt_dir: msvc2022_64
             python_version: '3.12'
+            runtime_md5: '6113e0c799639e38a98bd7b77e4f4bfb'
           - paraview_version: v6.1.1
             paraview_commit: c373b13bca0b97680bae8de3e997c056404b9b77
             paraview_series: '6.1'
@@ -69,6 +83,7 @@ jobs:
             qt_arch: win64_msvc2022_64
             qt_dir: msvc2022_64
             python_version: '3.12'
+            runtime_md5: '6e97a803f7a6ccd4e86520d77ac18570'
     env:
       PACKAGE_VERSION: ${{ inputs.package_version }}
       PARAVIEW_VERSION: ${{ matrix.paraview_version }}
@@ -78,6 +93,7 @@ jobs:
       QT_ARCH: ${{ matrix.qt_arch }}
       QT_DIR: ${{ matrix.qt_dir }}
       PYTHON_VERSION: ${{ matrix.python_version }}
+      RUNTIME_MD5: ${{ matrix.runtime_md5 }}
       AQTINSTALL_VERSION: 3.3.0
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -239,6 +255,48 @@ jobs:
           sha256sum "$DIR.zip" > "$DIR.zip.sha256"
           echo "ARCHIVE_NAME=$DIR.zip" >> "$GITHUB_ENV"
           echo "CHECKSUM_NAME=$DIR.zip.sha256" >> "$GITHUB_ENV"
+
+      - name: Load packaged plugin with official ParaView
+        if: ${{ inputs.verify_official_runtime }}
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $version = $env:PARAVIEW_VERSION.TrimStart('v')
+          $runtimeFilename = "ParaView-$version-Windows-Python$env:PYTHON_VERSION-msvc2017-AMD64.zip"
+          $runtimeUrl = "https://www.paraview.org/files/v$env:PARAVIEW_SERIES/$runtimeFilename"
+          $runtimeArchive = Join-Path $env:RUNNER_TEMP 'paraview-runtime.zip'
+          $runtimeRoot = Join-Path $env:RUNNER_TEMP 'paraview-runtime'
+          $pluginRoot = Join-Path $env:RUNNER_TEMP 'plugin-package'
+
+          curl.exe --fail --location --retry 3 --retry-all-errors `
+            --output $runtimeArchive `
+            $runtimeUrl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $actualMd5 = (Get-FileHash -Algorithm MD5 $runtimeArchive).Hash.ToLowerInvariant()
+          if ($actualMd5 -ne $env:RUNTIME_MD5) {
+            Write-Error "Official ParaView runtime checksum mismatch"
+            exit 1
+          }
+          Get-FileHash -Algorithm SHA256 $runtimeArchive | Format-List
+
+          New-Item -ItemType Directory -Force -Path $runtimeRoot, $pluginRoot | Out-Null
+          7z x $runtimeArchive "-o$runtimeRoot" -y | Out-Null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          7z x $env:ARCHIVE_NAME "-o$pluginRoot" -y | Out-Null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $pvpython = Get-ChildItem $runtimeRoot -Recurse -Filter pvpython.exe |
+            Where-Object { $_.FullName -match '[\\/]bin[\\/]pvpython\.exe$' } |
+            Select-Object -First 1
+          $plugin = Get-ChildItem $pluginRoot -Recurse -Filter ParaViewMCP.dll |
+            Select-Object -First 1
+          if (-not $pvpython) { Write-Error 'Official pvpython.exe not found'; exit 1 }
+          if (-not $plugin) { Write-Error 'Packaged ParaViewMCP.dll not found'; exit 1 }
+
+          & $pvpython.FullName Testing/Smoke/load_plugin.py $plugin.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0

@@ -56,6 +56,11 @@ paraview_mcp_add_cpp_test(
   ParaViewMCP.RequestHandler
 )
 paraview_mcp_add_cpp_test(
+  TestParaViewMCPPythonBridge
+  TestParaViewMCPPythonBridge.cxx
+  ParaViewMCP.PythonBridge
+)
+paraview_mcp_add_cpp_test(
   TestParaViewMCPSocketBridge
   TestParaViewMCPSocketBridge.cxx
   ParaViewMCP.SocketBridge
