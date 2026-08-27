@@ -2,15 +2,21 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    commit-message:
+      prefix: "chore(deps)"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "pip"
     directory: "/Wrapping/Python/MCPServer"
+    commit-message:
+      prefix: "chore(deps)"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "docker"
     directory: "/.github/docker"
+    commit-message:
+      prefix: "chore(deps)"
     schedule:
       interval: "monthly"
