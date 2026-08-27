@@ -146,6 +146,13 @@ ParaViewMCPRequestHandler::handleCommand(const QJsonObject& message)
 
     QJsonObject result;
     QString errorText;
+    if (!this->PythonBridge.initialize(&errorText))
+    {
+      return ParaViewMCPRequestHandler::error(
+        requestId,
+        QStringLiteral("PYTHON_NOT_READY"),
+        errorText.isEmpty() ? QStringLiteral("ParaView Python is not ready") : errorText);
+    }
     if (!this->PythonBridge.executePython(code, &result, &errorText))
     {
       return ParaViewMCPRequestHandler::error(

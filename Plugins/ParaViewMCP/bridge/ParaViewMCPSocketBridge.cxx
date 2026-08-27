@@ -222,7 +222,20 @@ void ParaViewMCPSocketBridge::sendMessage(QTcpSocket* socket, const QJsonObject&
     return;
   }
 
-  socket->write(ParaViewMCP::encodeMessage(message));
+  QByteArray frame = ParaViewMCP::encodeMessage(message);
+  if (frame.isEmpty())
+  {
+    frame = ParaViewMCP::encodeMessage(QJsonObject{
+      {"request_id", message.value(QStringLiteral("request_id"))},
+      {"status", QStringLiteral("error")},
+      {"error",
+       QJsonObject{
+         {"code", QStringLiteral("RESPONSE_TOO_LARGE")},
+         {"message", QStringLiteral("The command response exceeds the protocol frame limit")},
+       }},
+    });
+  }
+  socket->write(frame);
   socket->flush();
 }
 

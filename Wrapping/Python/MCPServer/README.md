@@ -37,6 +37,16 @@ uv sync
 - `PARAVIEW_HOST` defaults to `127.0.0.1`; set it for remote connections
 - `PARAVIEW_PORT` defaults to `9877`
 - `PARAVIEW_AUTH_TOKEN` is required for non-loopback targets
+- `PARAVIEW_CONNECT_TIMEOUT_SECONDS` defaults to `30`
+- `PARAVIEW_COMMAND_TIMEOUT_SECONDS` is unset by default, allowing long commands to finish
+
+Commands run one at a time, with up to three additional calls waiting in FIFO order.
+`execute_paraview_code` distinguishes a completed request whose Python code failed from
+a request that never started or whose outcome became unknown after an optional command
+deadline expired. A cancelled waiter is removed before execution. An unknown outcome
+fences the connection until the MCP server restarts so queued work cannot overlap an
+unfinished ParaView command. The legacy `success` field remains in the result alongside
+`request_status` and `execution_status`.
 
 ## Bridge Protocol
 

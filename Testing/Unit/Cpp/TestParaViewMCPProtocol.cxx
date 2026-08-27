@@ -14,6 +14,7 @@ private slots:
   void encodesAndDecodesSingleFrame();
   void decodesBackToBackFrames();
   void waitsForPartialFrames();
+  void refusesToEncodeOversizedPayloads();
   void rejectsOversizedFrames();
   void rejectsMalformedJson();
   void detectsLoopbackHosts();
@@ -76,6 +77,16 @@ void TestParaViewMCPProtocol::waitsForPartialFrames()
   QVERIFY(ParaViewMCP::tryExtractMessages(buffer, messages, nullptr));
   QCOMPARE(messages.size(), 1);
   QCOMPARE(messages.front(), payload);
+}
+
+void TestParaViewMCPProtocol::refusesToEncodeOversizedPayloads()
+{
+  const QJsonObject payload{
+    {"request_id", QStringLiteral("oversized")},
+    {"value", QString(ParaViewMCP::MaxFrameBytes, QLatin1Char('x'))},
+  };
+
+  QVERIFY(ParaViewMCP::encodeMessage(payload).isEmpty());
 }
 
 void TestParaViewMCPProtocol::rejectsOversizedFrames()

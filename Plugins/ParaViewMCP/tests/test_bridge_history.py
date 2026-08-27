@@ -33,6 +33,62 @@ def bridge(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setitem(sys.modules, "paraview.servermanager", sm_mod)
     monkeypatch.setitem(sys.modules, "paraview.smstate", smstate_mod)
 
+    class FakeOutputWindow:
+        def __init__(self) -> None:
+            self._next_tag = 1
+            self._observers: dict[int, tuple[str, object]] = {}
+
+        def AddObserver(self, event: str, callback) -> int:
+            tag = self._next_tag
+            self._next_tag += 1
+            self._observers[tag] = (event, callback)
+            return tag
+
+        def RemoveObserver(self, tag: int) -> None:
+            self._observers.pop(tag, None)
+
+        def emit(self, event: str, message: str) -> None:
+            for observed_event, callback in list(self._observers.values()):
+                if observed_event == event:
+                    callback(self, event, message)
+
+        @property
+        def observer_count(self) -> int:
+            return len(self._observers)
+
+    output_window = FakeOutputWindow()
+    vtkmodules_mod = types.ModuleType("vtkmodules")
+    vtk_util_mod = types.ModuleType("vtkmodules.util")
+    vtk_misc_mod = types.ModuleType("vtkmodules.util.misc")
+    vtk_constants_mod = types.ModuleType("vtkmodules.util.vtkConstants")
+    vtk_core_mod = types.ModuleType("vtkmodules.vtkCommonCore")
+
+    def calldata_type(_value):
+        return lambda callback: callback
+
+    class vtkCommand:
+        ErrorEvent = "ErrorEvent"
+        WarningEvent = "WarningEvent"
+
+    class vtkOutputWindow:
+        @staticmethod
+        def GetInstance():
+            return output_window
+
+    vtk_misc_mod.calldata_type = calldata_type  # type: ignore[attr-defined]
+    vtk_constants_mod.VTK_STRING = 13  # type: ignore[attr-defined]
+    vtk_core_mod.vtkCommand = vtkCommand  # type: ignore[attr-defined]
+    vtk_core_mod.vtkOutputWindow = vtkOutputWindow  # type: ignore[attr-defined]
+    vtk_util_mod.misc = vtk_misc_mod  # type: ignore[attr-defined]
+    vtk_util_mod.vtkConstants = vtk_constants_mod  # type: ignore[attr-defined]
+    vtkmodules_mod.util = vtk_util_mod  # type: ignore[attr-defined]
+
+    monkeypatch.setitem(sys.modules, "vtkmodules", vtkmodules_mod)
+    monkeypatch.setitem(sys.modules, "vtkmodules.util", vtk_util_mod)
+    monkeypatch.setitem(sys.modules, "vtkmodules.util.misc", vtk_misc_mod)
+    monkeypatch.setitem(sys.modules, "vtkmodules.util.vtkConstants", vtk_constants_mod)
+    monkeypatch.setitem(sys.modules, "vtkmodules.vtkCommonCore", vtk_core_mod)
+
     # Force a fresh import so module-level globals reset.
     mod_name = "paraview_mcp_bridge"
     monkeypatch.delitem(sys.modules, mod_name, raising=False)
@@ -83,6 +139,85 @@ def test_history_captures_error(bridge) -> None:
     entry = history[0]
     assert entry["status"] == "error"
     assert "boom" in entry["result"]["error"]
+
+
+def test_execution_captures_paraview_errors_and_warnings(bridge) -> None:
+    from vtkmodules.vtkCommonCore import vtkCommand, vtkOutputWindow
+
+    output_window = vtkOutputWindow.GetInstance()
+    namespace = bridge._ensure_session()
+    namespace["emit_diagnostic"] = output_window.emit
+
+    result = json.loads(
+        bridge.execute_python(
+            "emit_diagnostic('WarningEvent', 'reader warning')\n"
+            "emit_diagnostic('ErrorEvent', 'pipeline failed')"
+        )
+    )
+
+    assert result["ok"] is False
+    assert result["paraview_warnings"] == ["reader warning"]
+    assert result["paraview_errors"] == ["pipeline failed"]
+    assert result["paraview_diagnostics_scope"] == "process_global_during_execution"
+    assert result["error"] == "ParaView reported errors during execution"
+    assert result["duration_ms"] >= 0
+    assert output_window.observer_count == 0
+    assert vtkCommand.ErrorEvent == "ErrorEvent"
+
+    history = json.loads(bridge.get_history())
+    assert history[-1]["status"] == "error"
+    assert history[-1]["result"]["error"] == "ParaView reported errors during execution"
+
+
+def test_execution_caps_captured_output(bridge) -> None:
+    result = json.loads(
+        bridge.execute_python(f"print('x' * {bridge.MAX_CAPTURED_OUTPUT_CHARS + 10})")
+    )
+
+    assert len(result["stdout"]) == bridge.MAX_CAPTURED_OUTPUT_CHARS
+    assert result["output_truncated"] is True
+
+
+def test_execution_caps_exception_details(bridge) -> None:
+    result = json.loads(
+        bridge.execute_python(
+            f"raise ValueError('x' * {bridge.MAX_CAPTURED_OUTPUT_CHARS + 10})"
+        )
+    )
+
+    assert len(result["error"]) == bridge.MAX_CAPTURED_OUTPUT_CHARS
+    assert len(result["traceback"]) == bridge.MAX_CAPTURED_OUTPUT_CHARS
+    assert result["output_truncated"] is True
+
+
+def test_history_retains_only_newest_entries(bridge) -> None:
+    for value in range(bridge.MAX_HISTORY_ENTRIES + 1):
+        bridge.execute_python(f"value = {value}")
+
+    history = json.loads(bridge.get_history())
+    assert len(history) == bridge.MAX_HISTORY_ENTRIES
+    assert history[0]["id"] == 2
+    assert history[-1]["id"] == bridge.MAX_HISTORY_ENTRIES + 1
+
+
+def test_history_caps_retained_source_code(bridge) -> None:
+    bridge.execute_python(f"value = '{'x' * bridge.MAX_HISTORY_CODE_CHARS}'")
+
+    history = json.loads(bridge.get_history())
+    assert len(history[0]["code"]) == bridge.MAX_HISTORY_CODE_CHARS
+    assert history[0]["code_truncated"] is True
+
+
+def test_history_evicts_entries_to_stay_within_aggregate_budget(bridge) -> None:
+    for value in range(bridge.MAX_HISTORY_ENTRIES):
+        bridge.execute_python(
+            f"print('{value}:' + 'x' * {bridge.MAX_HISTORY_OUTPUT_CHARS})"
+        )
+
+    history = json.loads(bridge.get_history())
+    assert len(history) < bridge.MAX_HISTORY_ENTRIES
+    assert history[0]["id"] > 1
+    assert bridge._history_size() <= bridge.MAX_HISTORY_BYTES
 
 
 def test_inspect_pipeline_logged_without_snapshot(bridge) -> None:

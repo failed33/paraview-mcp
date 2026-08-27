@@ -18,6 +18,7 @@ private slots:
   void helloCompletesTheHandshake();
   void disconnectResetsSessionState();
   void preservesRequestIdsAcrossResponses();
+  void oversizedResponsesReturnCompactErrorsAndKeepConnectionOpen();
 };
 
 void TestParaViewMCPSocketBridge::acceptsOneClientAndRejectsTheSecond()
@@ -196,6 +197,65 @@ void TestParaViewMCPSocketBridge::preservesRequestIdsAcrossResponses()
 
   QVERIFY(waitForJsonMessage(client, &response, &error));
   QCOMPARE(response.value(QStringLiteral("request_id")).toString(), QStringLiteral("ping-1"));
+
+  bridge.stop();
+}
+
+void TestParaViewMCPSocketBridge::oversizedResponsesReturnCompactErrorsAndKeepConnectionOpen()
+{
+  FakeParaViewMCPPythonBridge bridgeImpl;
+  bridgeImpl.ExecutePayload = QJsonObject{
+    {"ok", true},
+    {"stdout", QString(ParaViewMCP::MaxFrameBytes, QLatin1Char('x'))},
+  };
+  ParaViewMCPRequestHandler handler(bridgeImpl);
+  ParaViewMCPSocketBridge bridge(bridgeImpl, handler);
+
+  ParaViewMCPServerConfig config;
+  config.Host = QStringLiteral("127.0.0.1");
+  config.Port = 0;
+  QString error;
+  if (!bridge.start(config, &error))
+  {
+    QSKIP(qPrintable(error));
+  }
+
+  QTcpSocket client;
+  QVERIFY(connectClientSocket(client, bridge.serverPort(), &error));
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("hello-1")},
+                   {"type", QStringLiteral("hello")},
+                   {"protocol_version", ParaViewMCP::ProtocolVersion},
+                   {"auth_token", QString()},
+                 });
+
+  QJsonObject response;
+  QVERIFY(waitForJsonMessage(client, &response, &error));
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("execute-oversized")},
+                   {"type", QStringLiteral("execute_python")},
+                   {"params", QJsonObject{{"code", QStringLiteral("print('x')")}}},
+                 });
+
+  QVERIFY(waitForJsonMessage(client, &response, &error));
+  QCOMPARE(response.value(QStringLiteral("request_id")).toString(),
+           QStringLiteral("execute-oversized"));
+  QCOMPARE(
+    response.value(QStringLiteral("error")).toObject().value(QStringLiteral("code")).toString(),
+    QStringLiteral("RESPONSE_TOO_LARGE"));
+
+  writeJsonFrame(client,
+                 QJsonObject{
+                   {"request_id", QStringLiteral("ping-after-oversized")},
+                   {"type", QStringLiteral("ping")},
+                   {"params", QJsonObject()},
+                 });
+  QVERIFY(waitForJsonMessage(client, &response, &error));
+  QCOMPARE(response.value(QStringLiteral("request_id")).toString(),
+           QStringLiteral("ping-after-oversized"));
+  QCOMPARE(response.value(QStringLiteral("status")).toString(), QStringLiteral("success"));
 
   bridge.stop();
 }

@@ -8,13 +8,96 @@ import io
 import json
 import os
 import tempfile
+import time
 import traceback
-from contextlib import redirect_stderr, redirect_stdout
+from collections.abc import Iterator
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from typing import Any
+
+MAX_CAPTURED_OUTPUT_CHARS = 256 * 1024
+MAX_HISTORY_BYTES = 4 * 1024 * 1024
+MAX_HISTORY_CODE_CHARS = 64 * 1024
+MAX_HISTORY_ENTRIES = 100
+MAX_HISTORY_OUTPUT_CHARS = 64 * 1024
+MAX_SNAPSHOT_CHARS = 512 * 1024
 
 _SESSION_GLOBALS: dict[str, Any] | None = None
 _HISTORY: list[dict] = []
 _NEXT_ID: int = 1
+
+
+class _LimitedTextBuffer(io.StringIO):
+    def __init__(self, max_chars: int) -> None:
+        super().__init__()
+        self._max_chars = max_chars
+        self.truncated = False
+
+    def write(self, text: str) -> int:
+        remaining = self._max_chars - self.tell()
+        if remaining <= 0:
+            self.truncated = self.truncated or bool(text)
+            return len(text)
+        if len(text) > remaining:
+            super().write(text[:remaining])
+            self.truncated = True
+            return len(text)
+        return super().write(text)
+
+
+class _DiagnosticCapture:
+    def __init__(self) -> None:
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
+        self.truncated = False
+        self._captured_chars = 0
+
+    def append(self, destination: list[str], message: object) -> None:
+        text = str(message).strip()
+        if not text:
+            return
+        remaining = MAX_CAPTURED_OUTPUT_CHARS - self._captured_chars
+        if remaining <= 0:
+            self.truncated = True
+            return
+        if len(text) > remaining:
+            text = text[:remaining]
+            self.truncated = True
+        destination.append(text)
+        self._captured_chars += len(text)
+
+
+@contextmanager
+def _capture_paraview_diagnostics() -> Iterator[_DiagnosticCapture]:
+    capture = _DiagnosticCapture()
+    output_window = None
+    observer_tags: list[int] = []
+    try:
+        from vtkmodules.util.misc import calldata_type
+        from vtkmodules.util.vtkConstants import VTK_STRING
+        from vtkmodules.vtkCommonCore import vtkCommand, vtkOutputWindow
+
+        @calldata_type(VTK_STRING)
+        def capture_error(_caller, _event, message) -> None:
+            capture.append(capture.errors, message)
+
+        @calldata_type(VTK_STRING)
+        def capture_warning(_caller, _event, message) -> None:
+            capture.append(capture.warnings, message)
+
+        output_window = vtkOutputWindow.GetInstance()
+        if output_window is not None:
+            observer_tags.append(output_window.AddObserver(vtkCommand.ErrorEvent, capture_error))
+            observer_tags.append(output_window.AddObserver(vtkCommand.WarningEvent, capture_warning))
+    except Exception:
+        output_window = None
+        observer_tags.clear()
+
+    try:
+        yield capture
+    finally:
+        if output_window is not None:
+            for tag in observer_tags:
+                output_window.RemoveObserver(tag)
 
 
 def _new_session() -> dict[str, Any]:
@@ -46,7 +129,8 @@ def _capture_snapshot() -> str | None:
     try:
         from paraview import smstate
 
-        return smstate.get_state()
+        snapshot = smstate.get_state()
+        return snapshot if len(snapshot) <= MAX_SNAPSHOT_CHARS else None
     except Exception:
         return None
 
@@ -81,6 +165,18 @@ def _timestamp() -> str:
     return datetime.datetime.now(tz=datetime.timezone.utc).strftime("%H:%M:%S")
 
 
+def _truncate_text(text: str, max_chars: int) -> tuple[str, bool]:
+    if len(text) <= max_chars:
+        return text, False
+    return text[:max_chars], True
+
+
+def _truncate_history_code(code: str | None) -> tuple[str | None, bool]:
+    if code is None or len(code) <= MAX_HISTORY_CODE_CHARS:
+        return code, False
+    return code[:MAX_HISTORY_CODE_CHARS], True
+
+
 def _append_entry(
     command: str,
     *,
@@ -90,18 +186,28 @@ def _append_entry(
     status: str = "ok",
 ) -> None:
     global _NEXT_ID
+    stored_code, code_truncated = _truncate_history_code(code)
     _HISTORY.append(
         {
             "id": _NEXT_ID,
             "command": command,
-            "code": code,
+            "code": stored_code,
+            "code_truncated": code_truncated,
             "snapshot": snapshot,
             "result": result,
             "status": status,
             "timestamp": _timestamp(),
         }
     )
+    while len(_HISTORY) > MAX_HISTORY_ENTRIES or _history_size() > MAX_HISTORY_BYTES:
+        del _HISTORY[0]
     _NEXT_ID += 1
+
+
+def _history_size() -> int:
+    return sum(
+        len(json.dumps(entry, ensure_ascii=True, separators=(",", ":"))) for entry in _HISTORY
+    )
 
 
 def _log_readonly(command: str) -> None:
@@ -179,32 +285,72 @@ def restore_snapshot(entry_id: int) -> str:
 def execute_python(code: str) -> str:
     namespace = _ensure_session()
     snapshot = _capture_snapshot()
-    stdout_buffer = io.StringIO()
-    stderr_buffer = io.StringIO()
+    stdout_buffer = _LimitedTextBuffer(MAX_CAPTURED_OUTPUT_CHARS)
+    stderr_buffer = _LimitedTextBuffer(MAX_CAPTURED_OUTPUT_CHARS)
     result = {
         "ok": True,
         "stdout": "",
         "stderr": "",
         "error": None,
         "traceback": None,
+        "paraview_errors": [],
+        "paraview_warnings": [],
+        "paraview_diagnostics_scope": "process_global_during_execution",
+        "duration_ms": 0,
+        "output_truncated": False,
     }
 
-    try:
-        with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
-            exec(code, namespace, namespace)
-    except Exception as exc:
-        result["ok"] = False
-        result["error"] = str(exc)
-        result["traceback"] = traceback.format_exc()
+    started_at = time.perf_counter()
+    with _capture_paraview_diagnostics() as diagnostics:
+        try:
+            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+                exec(code, namespace, namespace)
+        except Exception as exc:
+            result["ok"] = False
+            result["error"], error_truncated = _truncate_text(
+                str(exc), MAX_CAPTURED_OUTPUT_CHARS
+            )
+            result["traceback"], traceback_truncated = _truncate_text(
+                traceback.format_exc(), MAX_CAPTURED_OUTPUT_CHARS
+            )
+            result["output_truncated"] = error_truncated or traceback_truncated
+    result["duration_ms"] = max(0, round((time.perf_counter() - started_at) * 1000))
 
     result["stdout"] = stdout_buffer.getvalue()
     result["stderr"] = stderr_buffer.getvalue()
+    result["paraview_errors"] = diagnostics.errors
+    result["paraview_warnings"] = diagnostics.warnings
+    result["output_truncated"] = (
+        result["output_truncated"]
+        or stdout_buffer.truncated
+        or stderr_buffer.truncated
+        or diagnostics.truncated
+    )
+    if diagnostics.errors:
+        result["ok"] = False
+        if result["error"] is None:
+            result["error"] = "ParaView reported errors during execution"
 
+    history_stdout, history_stdout_truncated = _truncate_text(
+        result["stdout"], MAX_HISTORY_OUTPUT_CHARS
+    )
+    history_error, history_error_truncated = _truncate_text(
+        result["error"] or "", MAX_HISTORY_OUTPUT_CHARS
+    )
     _append_entry(
         "execute_python",
         code=code,
         snapshot=snapshot,
-        result={"stdout": result["stdout"], "error": result["error"]},
+        result={
+            "stdout": history_stdout,
+            "error": history_error,
+            "duration_ms": result["duration_ms"],
+            "output_truncated": (
+                result["output_truncated"]
+                or history_stdout_truncated
+                or history_error_truncated
+            ),
+        },
         status="ok" if result["ok"] else "error",
     )
 
