@@ -102,7 +102,6 @@ ParaViewMCPPopup::ParaViewMCPPopup(QWidget* parent)
 
   // --- Connections ---
   ParaViewMCPBridgeController& controller = ParaViewMCPBridgeController::instance();
-  controller.registerPopup(this);
 
   QObject::connect(this->StartButton,
                    &QPushButton::clicked,

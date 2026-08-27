@@ -34,8 +34,6 @@ ParaViewMCPToolbar::~ParaViewMCPToolbar() = default;
 
 void ParaViewMCPToolbar::constructor()
 {
-  this->Popup = new ParaViewMCPPopup(this);
-
   // Container widget: [icon button] [dot]
   this->Container = new QWidget(this);
   auto* layout = new QHBoxLayout(this->Container);
@@ -53,23 +51,16 @@ void ParaViewMCPToolbar::constructor()
 
   this->addWidget(this->Container);
 
+  auto* popup = new ParaViewMCPPopup(this);
+  ParaViewMCPBridgeController::instance().registerPopup(popup, this->Button);
+
   this->updateIcon();
   this->updateButtonAppearance();
 
   QObject::connect(this->Button,
                    &QToolButton::clicked,
                    this,
-                   [this]()
-                   {
-                     if (this->Popup->isVisible())
-                     {
-                       this->Popup->hide();
-                     }
-                     else
-                     {
-                       this->Popup->showRelativeTo(this->Button);
-                     }
-                   });
+                   []() { ParaViewMCPBridgeController::instance().togglePopup(); });
 
   QObject::connect(&ParaViewMCPBridgeController::instance(),
                    &ParaViewMCPBridgeController::serverStateChanged,

@@ -4,6 +4,7 @@
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QWidget>
 
 ParaViewMCPBridgeController& ParaViewMCPBridgeController::instance()
 {
@@ -53,18 +54,42 @@ void ParaViewMCPBridgeController::shutdown()
   this->Initialized = false;
 }
 
-void ParaViewMCPBridgeController::registerPopup(ParaViewMCPPopup* popup)
+void ParaViewMCPBridgeController::registerPopup(ParaViewMCPPopup* popup, QWidget* anchor)
 {
   this->Popup = popup;
+  this->PopupAnchor = anchor;
 }
 
-void ParaViewMCPBridgeController::showPopup(QWidget* anchor)
+void ParaViewMCPBridgeController::showPopup(QWidget* fallbackAnchor)
 {
   if (!this->Popup)
   {
     return;
   }
+
+  QWidget* anchor = fallbackAnchor;
+  if (this->PopupAnchor && this->PopupAnchor->isVisible())
+  {
+    anchor = this->PopupAnchor.data();
+  }
   this->Popup->showRelativeTo(anchor);
+}
+
+void ParaViewMCPBridgeController::togglePopup()
+{
+  if (!this->Popup)
+  {
+    return;
+  }
+
+  if (this->Popup->isVisible())
+  {
+    this->Popup->hide();
+  }
+  else
+  {
+    this->showPopup();
+  }
 }
 
 bool ParaViewMCPBridgeController::startServer(const QString& host,

@@ -145,8 +145,17 @@ jobs:
         if: steps.cache-pv.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          git clone --recursive --branch "$PARAVIEW_VERSION" --depth 1 \
-            https://gitlab.kitware.com/paraview/paraview.git /d/pv-src
+          for attempt in 1 2 3; do
+            rm -rf /d/pv-src
+            if git clone --recursive --branch "$PARAVIEW_VERSION" --depth 1 \
+              https://gitlab.kitware.com/paraview/paraview.git /d/pv-src; then
+              break
+            fi
+            if [[ "$attempt" == 3 ]]; then
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
           test "$(git -C /d/pv-src rev-parse HEAD)" = "$PARAVIEW_COMMIT"
           cd /d/pv-src
           # Idempotent Qt6 .arg(enum) cast normalizer (no-op at Qt 6.9.0, but safe).
