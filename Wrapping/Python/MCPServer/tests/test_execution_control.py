@@ -167,6 +167,55 @@ class CommandCoordinatorTests(unittest.IsolatedAsyncioTestCase):
             await queued
         self.assertEqual(execution_order, [0])
 
+    async def test_cancelled_unknown_outcome_still_requires_recovery(self) -> None:
+        coordinator = _CommandCoordinator()
+        release_worker = threading.Event()
+        worker_started = threading.Event()
+
+        def uncertain_operation() -> None:
+            worker_started.set()
+            if not release_worker.wait(timeout=2.0):
+                raise AssertionError("worker was not released")
+            raise ParaViewOutcomeUnknownError("response deadline expired")
+
+        active = asyncio.create_task(coordinator.run(uncertain_operation))
+        self.assertTrue(await asyncio.to_thread(worker_started.wait, 2.0))
+        active.cancel()
+        await asyncio.sleep(0)
+        release_worker.set()
+
+        with self.assertRaises(asyncio.CancelledError):
+            await active
+        with self.assertRaises(ParaViewRecoveryRequiredError):
+            await coordinator.run(lambda: None)
+
+    async def test_cancelled_worker_failure_preserves_cancellation(self) -> None:
+        coordinator = _CommandCoordinator()
+        release_worker = threading.Event()
+        worker_started = threading.Event()
+
+        def failing_operation() -> None:
+            worker_started.set()
+            if not release_worker.wait(timeout=2.0):
+                raise AssertionError("worker was not released")
+            raise RuntimeError("worker failed")
+
+        active = asyncio.create_task(coordinator.run(failing_operation))
+        self.assertTrue(await asyncio.to_thread(worker_started.wait, 2.0))
+        active.cancel()
+        await asyncio.sleep(0)
+        release_worker.set()
+
+        with self.assertRaises(asyncio.CancelledError):
+            await active
+
+    def test_removing_absent_waiter_is_idempotent(self) -> None:
+        coordinator = _CommandCoordinator()
+
+        coordinator._remove_waiter(object())
+
+        self.assertEqual(coordinator.queued_count, 0)
+
     async def test_shutdown_rejects_queued_command_without_executing_it(self) -> None:
         coordinator = _CommandCoordinator()
         release_first = threading.Event()
@@ -253,6 +302,43 @@ class ConnectionDeadlineTests(unittest.TestCase):
             release_resolver.set()
         self.assertLess(time.monotonic() - started_at, 0.2)
 
+    def test_expired_connection_deadline_is_rejected(self) -> None:
+        with (
+            patch("paraview_mcp.server.time.monotonic", return_value=10.0),
+            self.assertRaisesRegex(TimeoutError, "connection deadline"),
+        ):
+            server_module._remaining_seconds(10.0)
+
+    def test_hostname_resolution_propagates_resolver_error(self) -> None:
+        with (
+            patch(
+                "paraview_mcp.server.socket.getaddrinfo",
+                side_effect=OSError("resolver failed"),
+            ),
+            self.assertRaisesRegex(OSError, "resolver failed"),
+        ):
+            server_module._resolve_addresses("unresolved.invalid", 9877, time.monotonic() + 1.0)
+
+    def test_connection_rejects_empty_address_list(self) -> None:
+        with (
+            patch("paraview_mcp.server._resolve_addresses", return_value=[]),
+            self.assertRaisesRegex(OSError, "No TCP addresses"),
+        ):
+            server_module._create_connection("unresolved.invalid", 9877, time.monotonic() + 1.0)
+
+    def test_timeout_override_rejects_non_numeric_value(self) -> None:
+        with (
+            patch.dict(os.environ, {"PARAVIEW_TEST_TIMEOUT": "later"}),
+            self.assertRaisesRegex(ValueError, "finite number greater than zero"),
+        ):
+            server_module._read_timeout("PARAVIEW_TEST_TIMEOUT", None)
+
+    def test_timeout_override_returns_positive_number(self) -> None:
+        with patch.dict(os.environ, {"PARAVIEW_TEST_TIMEOUT": "2.5"}):
+            timeout = server_module._read_timeout("PARAVIEW_TEST_TIMEOUT", None)
+
+        self.assertEqual(timeout, 2.5)
+
     def test_connect_uses_short_timeout_then_disables_command_timeout(self) -> None:
         sock = MagicMock()
         connection = ParaViewConnection(
@@ -290,12 +376,22 @@ class ConnectionDeadlineTests(unittest.TestCase):
 
         self.assertIsNone(connection.sock)
 
-    def test_zero_byte_send_failure_is_safe_to_retry(self) -> None:
+    def test_send_failure_before_any_bytes_is_safe_to_retry(self) -> None:
         connection = ParaViewConnection(host="127.0.0.1", port=9877)
         connection.sock = MagicMock()
         connection.sock.send.side_effect = ConnectionResetError("reset")
 
         with self.assertRaises(ConnectionResetError):
+            connection.send_command("execute_python", {"code": "mutate()"})
+
+        self.assertIsNone(connection.sock)
+
+    def test_zero_byte_send_is_safe_to_retry(self) -> None:
+        connection = ParaViewConnection(host="127.0.0.1", port=9877)
+        connection.sock = MagicMock()
+        connection.sock.send.return_value = 0
+
+        with self.assertRaisesRegex(ConnectionError, "closed while sending"):
             connection.send_command("execute_python", {"code": "mutate()"})
 
         self.assertIsNone(connection.sock)
@@ -309,6 +405,21 @@ class ConnectionDeadlineTests(unittest.TestCase):
             connection.send_command("execute_python", {"code": "mutate()"})
 
         self.assertIsNone(connection.sock)
+
+    def test_mismatched_response_id_reports_unknown_outcome(self) -> None:
+        connection = ParaViewConnection(host="127.0.0.1", port=9877)
+        sock = MagicMock()
+        connection.sock = sock
+        with patch.object(
+            connection,
+            "_round_trip",
+            return_value={"request_id": "wrong", "status": "success", "result": {}},
+        ):
+            with self.assertRaisesRegex(ParaViewOutcomeUnknownError, "unexpected response"):
+                connection.send_command("execute_python", {"code": "mutate()"})
+
+        self.assertIsNone(connection.sock)
+        sock.close.assert_called_once_with()
 
 
 class SingletonConnectionTests(unittest.TestCase):

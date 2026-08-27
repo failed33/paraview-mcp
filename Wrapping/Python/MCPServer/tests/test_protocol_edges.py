@@ -8,6 +8,7 @@ import sys
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -19,6 +20,7 @@ from paraview_mcp.protocol import (
     encode_message,
     recv_exactly,
     recv_message,
+    set_socket_deadline,
 )
 
 
@@ -92,6 +94,16 @@ class RecvEdgeTests(unittest.TestCase):
         with self.assertRaises(TimeoutError):
             recv_exactly(SlowChunkSocket(), 4, deadline=time.monotonic() + 0.07)
         self.assertLess(time.monotonic() - started_at, 0.11)
+
+    def test_set_socket_deadline_rejects_expired_deadline(self) -> None:
+        sock = MagicMock()
+        with (
+            patch("paraview_mcp.protocol.time.monotonic", return_value=10.0),
+            self.assertRaisesRegex(TimeoutError, "operation deadline"),
+        ):
+            set_socket_deadline(sock, 10.0)
+
+        sock.settimeout.assert_not_called()
 
 
 if __name__ == "__main__":

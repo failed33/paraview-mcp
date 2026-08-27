@@ -24,6 +24,7 @@ private slots:
   void executePythonValidatesParams();
   void executePythonPassesThroughBridgeResults();
   void executePythonReportsInitializationFailuresBeforeExecution();
+  void executePythonUsesFallbackInitializationError();
   void propagatesBridgeFailures();
   void handlesPipelineAndScreenshotCommands();
   void rejectsUnknownCommands();
@@ -255,6 +256,34 @@ void TestParaViewMCPRequestHandler::executePythonReportsInitializationFailuresBe
              .value(QStringLiteral("message"))
              .toString(),
            QStringLiteral("interpreter unavailable"));
+}
+
+void TestParaViewMCPRequestHandler::executePythonUsesFallbackInitializationError()
+{
+  FakeParaViewMCPPythonBridge bridge;
+  bridge.InitializeResult = false;
+  ParaViewMCPRequestHandler handler(bridge);
+
+  const auto result = handler.handleMessage(
+    QJsonObject{
+      {"request_id", QStringLiteral("exec-1")},
+      {"type", QStringLiteral("execute_python")},
+      {"params", QJsonObject{{"code", QStringLiteral("print(42)")}}},
+    },
+    true,
+    QString());
+
+  QCOMPARE(bridge.ExecuteCalls, 0);
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("code"))
+             .toString(),
+           QStringLiteral("PYTHON_NOT_READY"));
+  QCOMPARE(result.Response.value(QStringLiteral("error"))
+             .toObject()
+             .value(QStringLiteral("message"))
+             .toString(),
+           QStringLiteral("ParaView Python is not ready"));
 }
 
 void TestParaViewMCPRequestHandler::handlesPipelineAndScreenshotCommands()

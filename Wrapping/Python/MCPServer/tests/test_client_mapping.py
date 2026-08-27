@@ -15,9 +15,12 @@ from support import install_fastmcp_stub
 
 install_fastmcp_stub()
 
+from paraview_mcp.protocol import FrameTooLargeError  # noqa: E402
 from paraview_mcp.server import (  # noqa: E402
     ParaViewBusyError,
     ParaViewOutcomeUnknownError,
+    ParaViewQueueClosedError,
+    ParaViewRecoveryRequiredError,
     execute_paraview_code,
     get_pipeline_info,
     get_screenshot,
@@ -97,6 +100,35 @@ class ClientMappingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["request_status"], "outcome_unknown")
         self.assertEqual(payload["execution_status"], "unknown")
         self.assertIn("not retry", payload["message"].lower())
+
+    async def test_execute_reports_truncated_output(self) -> None:
+        result = dict(SUCCESS_RESULT)
+        result["output_truncated"] = True
+        run_command = AsyncMock(return_value=result)
+
+        with patch("paraview_mcp.server._run_paraview_command", run_command):
+            payload = await execute_paraview_code(None, "print(42)")
+
+        self.assertIs(payload["output_truncated"], True)
+        self.assertIn("Output was truncated", payload["message"])
+
+    async def test_execute_transport_failures_report_not_started(self) -> None:
+        cases = (
+            (ParaViewRecoveryRequiredError("restart required"), "recovery_required"),
+            (ParaViewQueueClosedError("server shutting down"), "failed"),
+            (FrameTooLargeError("frame too large"), "failed"),
+            (OSError("connection unavailable"), "failed"),
+        )
+
+        for failure, request_status in cases:
+            with self.subTest(failure=type(failure).__name__):
+                run_command = AsyncMock(side_effect=failure)
+                with patch("paraview_mcp.server._run_paraview_command", run_command):
+                    payload = await execute_paraview_code(None, "print(1)")
+
+                self.assertIs(payload["success"], False)
+                self.assertEqual(payload["request_status"], request_status)
+                self.assertEqual(payload["execution_status"], "not_started")
 
     async def test_get_pipeline_info_maps_to_inspect_pipeline(self) -> None:
         run_command = AsyncMock(return_value={"count": 1, "sources": [{"name": "Wavelet"}]})
