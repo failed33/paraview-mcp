@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 import socket
 import struct
+import time
 from typing import Any
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9877
-DEFAULT_TIMEOUT_SECONDS = 180.0
+DEFAULT_CONNECT_TIMEOUT_SECONDS = 30.0
 MAX_FRAME_BYTES = 25 * 1024 * 1024
 PROTOCOL_VERSION = 2
 
@@ -90,11 +91,22 @@ class FrameBuffer:
             messages.append(decode_payload(payload))
 
 
-def recv_exactly(sock: socket.socket, size: int) -> bytes:
+def set_socket_deadline(sock: socket.socket, deadline: float | None) -> None:
+    """Apply the remaining duration of an absolute monotonic deadline."""
+    if deadline is None:
+        return
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("The ParaView operation deadline expired")
+    sock.settimeout(remaining)
+
+
+def recv_exactly(sock: socket.socket, size: int, *, deadline: float | None = None) -> bytes:
     """Receive exactly `size` bytes or raise when the peer disconnects."""
     chunks: list[bytes] = []
     bytes_remaining = size
     while bytes_remaining > 0:
+        set_socket_deadline(sock, deadline)
         chunk = sock.recv(bytes_remaining)
         if not chunk:
             raise ConnectionClosedError("Socket closed while receiving a framed message")
@@ -107,13 +119,14 @@ def recv_message(
     sock: socket.socket,
     *,
     max_frame_bytes: int = MAX_FRAME_BYTES,
+    deadline: float | None = None,
 ) -> dict[str, Any]:
     """Receive one framed message from a blocking socket."""
-    header = recv_exactly(sock, 4)
+    header = recv_exactly(sock, 4, deadline=deadline)
     frame_length = struct.unpack(">I", header)[0]
     if frame_length > max_frame_bytes:
         raise FrameTooLargeError(
             f"Incoming frame length {frame_length} exceeds limit {max_frame_bytes}"
         )
-    payload = recv_exactly(sock, frame_length)
+    payload = recv_exactly(sock, frame_length, deadline=deadline)
     return decode_payload(payload)

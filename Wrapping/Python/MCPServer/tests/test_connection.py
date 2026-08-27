@@ -71,17 +71,6 @@ class BridgeStubServer:
                     conn.sendall(encode_message(response))
 
 
-class StaleConnection:
-    def __init__(self) -> None:
-        self.disconnected = False
-
-    def ping(self) -> None:
-        raise RuntimeError("stale")
-
-    def disconnect(self) -> None:
-        self.disconnected = True
-
-
 class ConnectionTests(unittest.TestCase):
     def tearDown(self) -> None:
         if server_module._connection is not None:
@@ -188,7 +177,7 @@ class ConnectionTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "EXECUTION_ERROR")
         self.assertEqual(ctx.exception.traceback_text, "Traceback text")
 
-    def test_get_connection_recreates_a_stale_singleton(self) -> None:
+    def test_reused_singleton_reconnects_when_the_next_command_starts(self) -> None:
         def handler(request: dict[str, Any]) -> dict[str, Any]:
             if request["type"] == "hello":
                 return {
@@ -214,15 +203,12 @@ class ConnectionTests(unittest.TestCase):
         bridge.start()
         self.addCleanup(bridge.close)
 
-        stale = StaleConnection()
-        server_module._connection = stale
-        os.environ["PARAVIEW_HOST"] = "127.0.0.1"
-        os.environ["PARAVIEW_PORT"] = str(bridge.port)
+        connection = ParaViewConnection(host="127.0.0.1", port=bridge.port)
+        server_module._connection = connection
 
-        fresh = server_module.get_paraview_connection()
-        self.assertIsInstance(fresh, ParaViewConnection)
-        self.assertTrue(stale.disconnected)
-        fresh.ping()
+        reused = server_module.get_paraview_connection()
+        self.assertIs(reused, connection)
+        reused.ping()
 
         self.assertEqual([request["type"] for request in bridge.requests], ["hello", "ping"])
 

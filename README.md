@@ -120,11 +120,13 @@ configuration.
 
 The server connects to the ParaView plugin using these environment variables:
 
-| Variable              | Default     | Required          | Description                                          |
-| --------------------- | ----------- | ----------------- | ---------------------------------------------------- |
-| `PARAVIEW_HOST`       | `127.0.0.1` | No                | Host where the ParaView plugin is listening          |
-| `PARAVIEW_PORT`       | `9877`      | No                | TCP port for the plugin bridge                       |
-| `PARAVIEW_AUTH_TOKEN` | —           | Non-loopback only | Authentication token (must match the plugin setting) |
+| Variable                           | Default     | Required          | Description                                                    |
+| ---------------------------------- | ----------- | ----------------- | -------------------------------------------------------------- |
+| `PARAVIEW_HOST`                    | `127.0.0.1` | No                | Host where the ParaView plugin is listening                    |
+| `PARAVIEW_PORT`                    | `9877`      | No                | TCP port for the plugin bridge                                 |
+| `PARAVIEW_AUTH_TOKEN`              | —           | Non-loopback only | Authentication token (must match the plugin setting)           |
+| `PARAVIEW_CONNECT_TIMEOUT_SECONDS` | `30`        | No                | Deadline for opening the connection and completing the hello   |
+| `PARAVIEW_COMMAND_TIMEOUT_SECONDS` | —           | No                | Optional deadline for receiving a command result               |
 
 Defaults work for a standard local setup. Override these when connecting to ParaView on a remote machine or non-standard port:
 
@@ -151,6 +153,26 @@ Defaults work for a standard local setup. Override these when connecting to Para
 | `execute_paraview_code(code)`   | Execute Python code inside the active ParaView session |
 | `get_pipeline_info()`           | Return a JSON snapshot of the current pipeline         |
 | `get_screenshot(width, height)` | Capture the active render view as a PNG image          |
+
+ParaView commands are serialized because the live ParaView session is not safe to
+mutate concurrently. One command runs while up to three additional commands wait in
+FIFO order. A cancelled waiting call is removed without reaching ParaView. Further
+`execute_paraview_code` calls return `request_status: "busy"` with
+`execution_status: "not_started"`; the other tools report a `PARAVIEW_BUSY` tool error.
+
+`execute_paraview_code` reports request delivery separately from Python execution. A
+completed request can therefore return `execution_status: "failed"` together with
+Python stderr, a traceback, ParaView/VTK diagnostics, and execution duration. Command
+diagnostics are process-global events observed while the command runs, which the
+`paraview_diagnostics_scope` field states explicitly. Command results have no deadline
+by default so long computations can finish. If
+`PARAVIEW_COMMAND_TIMEOUT_SECONDS` is set and expires, the result is
+`request_status: "outcome_unknown"`; do not retry the command automatically because it
+may already have modified the ParaView session. The server then rejects queued and
+future commands with `request_status: "recovery_required"` until the MCP server is
+restarted. This prevents new work from overlapping the still-running command or using a
+silently reset session. The original `success` field remains available for existing
+clients and is true only for `completed` and `succeeded` results.
 
 ## Design and Differences from ParaView_MCP
 

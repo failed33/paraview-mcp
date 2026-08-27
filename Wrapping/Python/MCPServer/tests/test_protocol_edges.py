@@ -5,8 +5,10 @@ from __future__ import annotations
 import socket
 import struct
 import sys
+import time
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -18,6 +20,7 @@ from paraview_mcp.protocol import (
     encode_message,
     recv_exactly,
     recv_message,
+    set_socket_deadline,
 )
 
 
@@ -70,6 +73,37 @@ class RecvEdgeTests(unittest.TestCase):
                 recv_message(right, max_frame_bytes=64)
         finally:
             right.close()
+
+    def test_recv_exactly_enforces_total_deadline_across_slow_chunks(self) -> None:
+        class SlowChunkSocket:
+            def __init__(self) -> None:
+                self.timeout = 1.0
+
+            def settimeout(self, value: float) -> None:
+                self.timeout = value
+
+            def recv(self, _size: int) -> bytes:
+                chunk_delay = 0.03
+                if self.timeout < chunk_delay:
+                    time.sleep(self.timeout)
+                    raise TimeoutError("timed out")
+                time.sleep(chunk_delay)
+                return b"x"
+
+        started_at = time.monotonic()
+        with self.assertRaises(TimeoutError):
+            recv_exactly(SlowChunkSocket(), 4, deadline=time.monotonic() + 0.07)
+        self.assertLess(time.monotonic() - started_at, 0.11)
+
+    def test_set_socket_deadline_rejects_expired_deadline(self) -> None:
+        sock = MagicMock()
+        with (
+            patch("paraview_mcp.protocol.time.monotonic", return_value=10.0),
+            self.assertRaisesRegex(TimeoutError, "operation deadline"),
+        ):
+            set_socket_deadline(sock, 10.0)
+
+        sock.settimeout.assert_not_called()
 
 
 if __name__ == "__main__":

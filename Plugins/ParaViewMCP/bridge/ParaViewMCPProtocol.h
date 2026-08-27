@@ -31,6 +31,10 @@ namespace ParaViewMCP
   inline QByteArray encodeMessage(const QJsonObject& message)
   {
     const QByteArray payload = QJsonDocument(message).toJson(QJsonDocument::JsonFormat::Compact);
+    if (payload.size() > static_cast<qsizetype>(MaxFrameBytes))
+    {
+      return QByteArray();
+    }
     QByteArray frame;
     frame.resize(4 + payload.size());
     qToBigEndian<quint32>(static_cast<quint32>(payload.size()), frame.data());

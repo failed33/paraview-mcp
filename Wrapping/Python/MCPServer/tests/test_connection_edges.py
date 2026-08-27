@@ -21,7 +21,11 @@ install_fastmcp_stub()
 
 import paraview_mcp.server as server_module  # noqa: E402
 from paraview_mcp.protocol import PROTOCOL_VERSION, encode_message, recv_message  # noqa: E402
-from paraview_mcp.server import ParaViewCommandError, ParaViewConnection  # noqa: E402
+from paraview_mcp.server import (  # noqa: E402
+    ParaViewCommandError,
+    ParaViewConnection,
+    ParaViewOutcomeUnknownError,
+)
 
 # ---------------------------------------------------------------------------
 # Minimal TCP stub that speaks the bridge framing protocol
@@ -248,7 +252,7 @@ class RoundTripEdgeTests(unittest.TestCase):
     def test_disconnects_on_send_error(self) -> None:
         conn = ParaViewConnection(host="127.0.0.1", port=0)
         mock_sock = MagicMock()
-        mock_sock.sendall.side_effect = OSError("send failed")
+        mock_sock.send.side_effect = OSError("send failed")
         conn.sock = mock_sock
         with self.assertRaises(OSError):
             conn._round_trip({"type": "ping"})
@@ -304,6 +308,31 @@ class UnwrapResultEdgeTests(unittest.TestCase):
         parsed = json.loads(ctx.exception.traceback_text)
         self.assertEqual(parsed, details)
 
+    def test_response_too_large_has_unknown_execution_outcome(self) -> None:
+        with self.assertRaises(ParaViewOutcomeUnknownError):
+            ParaViewConnection._unwrap_result(
+                {
+                    "status": "error",
+                    "error": {
+                        "code": "RESPONSE_TOO_LARGE",
+                        "message": "response exceeded frame limit",
+                    },
+                }
+            )
+
+    def test_python_not_ready_is_a_known_pre_execution_failure(self) -> None:
+        with self.assertRaises(ParaViewCommandError) as ctx:
+            ParaViewConnection._unwrap_result(
+                {
+                    "status": "error",
+                    "error": {
+                        "code": "PYTHON_NOT_READY",
+                        "message": "interpreter unavailable",
+                    },
+                }
+            )
+        self.assertEqual(ctx.exception.code, "PYTHON_NOT_READY")
+
     def test_rejects_malformed_error_payload(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "malformed"):
             ParaViewConnection._unwrap_result({"status": "error", "error": "not a dict"})
@@ -341,6 +370,8 @@ class GetConnectionEdgeTests(unittest.TestCase):
         os.environ.pop("PARAVIEW_HOST", None)
         os.environ.pop("PARAVIEW_PORT", None)
         os.environ.pop("PARAVIEW_AUTH_TOKEN", None)
+        os.environ.pop("PARAVIEW_CONNECT_TIMEOUT_SECONDS", None)
+        os.environ.pop("PARAVIEW_COMMAND_TIMEOUT_SECONDS", None)
 
     def test_wraps_os_error_as_connection_error(self) -> None:
         # Grab an ephemeral port that is guaranteed to have no listener.
@@ -355,6 +386,22 @@ class GetConnectionEdgeTests(unittest.TestCase):
         with self.assertRaises(ConnectionError) as ctx:
             server_module.get_paraview_connection()
         self.assertIn("Could not connect", str(ctx.exception))
+        self.assertIsNone(server_module._connection)
+
+    def test_rejects_zero_command_timeout_before_connecting(self) -> None:
+        os.environ["PARAVIEW_COMMAND_TIMEOUT_SECONDS"] = "0"
+
+        with self.assertRaisesRegex(ValueError, "finite number greater than zero"):
+            server_module.get_paraview_connection()
+
+        self.assertIsNone(server_module._connection)
+
+    def test_rejects_non_finite_connect_timeout_before_connecting(self) -> None:
+        os.environ["PARAVIEW_CONNECT_TIMEOUT_SECONDS"] = "nan"
+
+        with self.assertRaisesRegex(ValueError, "finite number greater than zero"):
+            server_module.get_paraview_connection()
+
         self.assertIsNone(server_module._connection)
 
 
