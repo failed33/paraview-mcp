@@ -20,7 +20,6 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
-import anyio
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 
@@ -141,9 +140,7 @@ class _CommandCoordinator:
     async def run(self, operation: Callable[[], _ResultT]) -> _ResultT:
         """Run one blocking bridge operation after cancellable queue admission."""
         async with self.command_slot():
-            worker = asyncio.create_task(
-                anyio.to_thread.run_sync(operation, abandon_on_cancel=False)
-            )
+            worker = asyncio.create_task(asyncio.to_thread(operation))
             cancelled = False
             while not worker.done():
                 try:
