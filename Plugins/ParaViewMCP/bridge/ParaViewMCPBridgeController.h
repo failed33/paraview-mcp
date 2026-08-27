@@ -10,6 +10,7 @@
 #include <QString>
 
 class ParaViewMCPPopup;
+class QWidget;
 
 class ParaViewMCPBridgeController : public QObject
 {
@@ -30,8 +31,9 @@ public:
   void initialize();
   void shutdown();
 
-  void registerPopup(ParaViewMCPPopup* popup);
-  void showPopup(QWidget* anchor = nullptr);
+  void registerPopup(ParaViewMCPPopup* popup, QWidget* anchor);
+  void showPopup();
+  void togglePopup();
 
   bool startServer(const QString& host, quint16 port, const QString& authToken);
   void stopServer();
@@ -64,6 +66,7 @@ private:
   bool Initialized = false;
   ParaViewMCPServerConfig Config;
   QPointer<ParaViewMCPPopup> Popup;
+  QPointer<QWidget> PopupAnchor;
   ServerState CurrentState = ServerState::Stopped;
   QString LastStatus;
   QString LastLog;
