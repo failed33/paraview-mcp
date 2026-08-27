@@ -60,18 +60,17 @@ void ParaViewMCPBridgeController::registerPopup(ParaViewMCPPopup* popup, QWidget
   this->PopupAnchor = anchor;
 }
 
-void ParaViewMCPBridgeController::showPopup()
+void ParaViewMCPBridgeController::showPopup(QWidget* fallbackAnchor)
 {
   if (!this->Popup)
   {
     return;
   }
 
-  QWidget* anchor = nullptr;
-  if (this->PopupAnchor)
+  QWidget* anchor = fallbackAnchor;
+  if (this->PopupAnchor && this->PopupAnchor->isVisible())
   {
-    anchor =
-      this->PopupAnchor->isVisible() ? this->PopupAnchor.data() : this->PopupAnchor->window();
+    anchor = this->PopupAnchor.data();
   }
   this->Popup->showRelativeTo(anchor);
 }

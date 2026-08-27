@@ -122,7 +122,7 @@ jobs:
         if: steps.cache-qt.outputs.cache-hit != 'true' && startsWith(env.QT_VERSION, '5.')
         run: |
           archive=/tmp/qt-arm64.tar.xz
-          curl --fail --location --output "$archive" \
+          curl --fail --location --retry 3 --retry-all-errors --retry-delay 5 --output "$archive" \
             "https://gitlab.kitware.com/api/v4/projects/6955/packages/generic/qt/v5.15.2-20210519.0/qt-5.15.2-macosx11.0-arm64.tar.xz"
           echo "e80d2647de461370bb65db60bc657148d196348b7393a2975d4a54bfba1b217f  $archive" | shasum -a 256 -c -
           mkdir -p /tmp/Qt
@@ -153,8 +153,17 @@ jobs:
           else
             QT_PREFIX="/tmp/Qt/${QT_VERSION}/macos"
           fi
-          git clone --recursive --branch "${PARAVIEW_VERSION}" --depth 1 \
-            https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src
+          for attempt in 1 2 3; do
+            rm -rf /tmp/paraview-src
+            if git clone --recursive --branch "${PARAVIEW_VERSION}" --depth 1 \
+              https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src; then
+              break
+            fi
+            if [[ "$attempt" == 3 ]]; then
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
           test "$(git -C /tmp/paraview-src rev-parse HEAD)" = "${PARAVIEW_COMMIT}"
           # Idempotent Qt6 .arg(enum) cast normalizer. This is a no-op when the
           # source already contains the required casts.

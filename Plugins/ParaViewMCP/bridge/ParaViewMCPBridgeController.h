@@ -32,7 +32,7 @@ public:
   void shutdown();
 
   void registerPopup(ParaViewMCPPopup* popup, QWidget* anchor);
-  void showPopup();
+  void showPopup(QWidget* fallbackAnchor = nullptr);
   void togglePopup();
 
   bool startServer(const QString& host, quint16 port, const QString& authToken);

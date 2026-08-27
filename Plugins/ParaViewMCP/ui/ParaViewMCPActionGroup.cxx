@@ -2,6 +2,8 @@
 
 #include "bridge/ParaViewMCPBridgeController.h"
 
+#include <pqCoreUtilities.h>
+
 #include <QAction>
 #include <QIcon>
 
@@ -11,5 +13,7 @@ ParaViewMCPActionGroup::ParaViewMCPActionGroup(QObject* parent) : QActionGroup(p
     QIcon(QStringLiteral(":/ParaViewMCP/mcp-icon.png")), QStringLiteral("ParaView MCP"), this);
   this->addAction(action);
   QObject::connect(
-    action, &QAction::triggered, []() { ParaViewMCPBridgeController::instance().showPopup(); });
+    action,
+    &QAction::triggered,
+    []() { ParaViewMCPBridgeController::instance().showPopup(pqCoreUtilities::mainWidget()); });
 }
