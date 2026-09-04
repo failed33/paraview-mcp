@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.4](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.3...ParaViewMCP-v0.2.4) (2026-09-04)
+
+
+### Features
+
+* serialize ParaView command execution ([#52](https://github.com/failed33/paraview-mcp/issues/52)) ([db57785](https://github.com/failed33/paraview-mcp/commit/db57785ea530c76f73005c2f327822fcffcc4a21))
+
+
+### Bug Fixes
+
+* **ci:** align Dependabot commit messages ([#48](https://github.com/failed33/paraview-mcp/issues/48)) ([67d558f](https://github.com/failed33/paraview-mcp/commit/67d558fac79037a7bc238ede04c36ad88f50fab8))
+* **ci:** handle Dependabot title capitalization ([#50](https://github.com/failed33/paraview-mcp/issues/50)) ([5ecfe5d](https://github.com/failed33/paraview-mcp/commit/5ecfe5d10dcc93051d62ecd43171dae0fb3d520f))
+* **plugin:** reuse toolbar popup from Tools menu ([#51](https://github.com/failed33/paraview-mcp/issues/51)) ([779c064](https://github.com/failed33/paraview-mcp/commit/779c0649206db5eb86e707565ae2f0a1f5ce8672))
+
 ## [0.2.3](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.2...ParaViewMCP-v0.2.3) (2026-08-14)
 
 
