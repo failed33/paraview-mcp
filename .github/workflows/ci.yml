@@ -60,6 +60,9 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pyrefly check src/
       - run: uv run pytest
+      - name: Test embedded ParaView state and history
+        run: uv run --project Wrapping/Python/MCPServer pytest Plugins/ParaViewMCP/tests
+        working-directory: .
       - name: Check license compatibility
         run: uv run licensecheck -r pyproject.toml --ignore-packages caio --zero
       - name: Verify third-party notices are current
