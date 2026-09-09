@@ -36,6 +36,7 @@ jobs:
           # Dependabot does not expose a setting for subject capitalization.
           if [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
             PR_TITLE="${PR_TITLE/#chore(deps): Bump /chore(deps): bump }"
+            PR_TITLE="${PR_TITLE/#chore(deps): Update /chore(deps): update }"
           fi
           title_file=$(mktemp)
           printf '%s\n' "$PR_TITLE" > "$title_file"
