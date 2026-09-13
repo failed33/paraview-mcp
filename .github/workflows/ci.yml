@@ -36,6 +36,7 @@ jobs:
           # Dependabot does not expose a setting for subject capitalization.
           if [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
             PR_TITLE="${PR_TITLE/#chore(deps): Bump /chore(deps): bump }"
+            PR_TITLE="${PR_TITLE/#chore(deps): Update /chore(deps): update }"
           fi
           title_file=$(mktemp)
           printf '%s\n' "$PR_TITLE" > "$title_file"
@@ -50,7 +51,7 @@ jobs:
         working-directory: Wrapping/Python/MCPServer
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
@@ -60,6 +61,9 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pyrefly check src/
       - run: uv run pytest
+      - name: Test embedded ParaView state and history
+        run: uv run --project Wrapping/Python/MCPServer pytest Plugins/ParaViewMCP/tests
+        working-directory: .
       - name: Check license compatibility
         run: uv run licensecheck -r pyproject.toml --ignore-packages caio --zero
       - name: Verify third-party notices are current
