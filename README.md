@@ -154,25 +154,12 @@ Defaults work for a standard local setup. Override these when connecting to Para
 | `get_pipeline_info()`           | Return a JSON snapshot of the current pipeline         |
 | `get_screenshot(width, height)` | Capture the active render view as a PNG image          |
 
-ParaView commands are serialized because the live ParaView session is not safe to
-mutate concurrently. One command runs while up to three additional commands wait in
-FIFO order. A cancelled waiting call is removed without reaching ParaView. Further
-`execute_paraview_code` calls return `request_status: "busy"` with
-`execution_status: "not_started"`; the other tools report a `PARAVIEW_BUSY` tool error.
+One command runs at a time, up to three wait in FIFO order, and further calls report busy.
+This prevents concurrent mutations of ParaView's shared state.
 
-`execute_paraview_code` reports request delivery separately from Python execution. A
-completed request can therefore return `execution_status: "failed"` together with
-Python stderr, a traceback, ParaView/VTK diagnostics, and execution duration. Command
-diagnostics are process-global events observed while the command runs, which the
-`paraview_diagnostics_scope` field states explicitly. Command results have no deadline
-by default so long computations can finish. If
-`PARAVIEW_COMMAND_TIMEOUT_SECONDS` is set and expires, the result is
-`request_status: "outcome_unknown"`; do not retry the command automatically because it
-may already have modified the ParaView session. The server then rejects queued and
-future commands with `request_status: "recovery_required"` until the MCP server is
-restarted. This prevents new work from overlapping the still-running command or using a
-silently reset session. The original `success` field remains available for existing
-clients and is true only for `completed` and `succeeded` results.
+Execution results include output, diagnostics, and separate request and Python statuses.
+See [execution and state](Wrapping/Python/MCPServer/README.md#execution-and-state)
+for cancellation, timeouts, and recovery behavior.
 
 ## Design and Differences from ParaView_MCP
 
