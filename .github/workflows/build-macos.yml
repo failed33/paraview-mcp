@@ -94,7 +94,7 @@ jobs:
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (matching ParaView)
         id: python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -104,7 +104,7 @@ jobs:
       # --- Qt version matching the target ParaView binary ---------------------
       - name: Restore Qt cache
         id: cache-qt
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/Qt
           key: qt-${{ env.QT_VERSION }}-macos-clang64-aqt${{ env.AQTINSTALL_VERSION }}-v2
@@ -140,7 +140,7 @@ jobs:
       # Restore-only so a half-built SDK from a failed run is never cached.
       - name: Restore ParaView SDK cache
         id: cache-paraview
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/paraview-sdk
           key: paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2
