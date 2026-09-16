@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(ParaViewMCP VERSION 0.2.3 LANGUAGES C CXX) # x-release-please-version
+project(ParaViewMCP VERSION 0.2.4 LANGUAGES C CXX) # x-release-please-version
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
