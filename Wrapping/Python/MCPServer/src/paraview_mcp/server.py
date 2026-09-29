@@ -141,27 +141,30 @@ class _CommandCoordinator:
         """Run one blocking bridge operation after cancellable queue admission."""
         async with self.command_slot():
             worker = asyncio.create_task(asyncio.to_thread(operation))
-            cancelled = False
+            cancellation: asyncio.CancelledError | None = None
             while not worker.done():
                 try:
                     await asyncio.shield(worker)
-                except asyncio.CancelledError:
-                    cancelled = True
+                except asyncio.CancelledError as exc:
+                    # The SDK's cancellation scope identifies its own exception.
+                    # Replacing it with a new CancelledError makes a cancelled tool
+                    # look like transport shutdown and aborts unrelated requests.
+                    cancellation = exc
                 except BaseException:
                     break
             try:
                 result = worker.result()
             except ParaViewOutcomeUnknownError as exc:
                 await self._require_recovery(str(exc))
-                if cancelled:
-                    raise asyncio.CancelledError from exc
+                if cancellation is not None:
+                    raise cancellation from exc
                 raise
             except BaseException as exc:
-                if cancelled:
-                    raise asyncio.CancelledError from exc
+                if cancellation is not None:
+                    raise cancellation from exc
                 raise
-            if cancelled:
-                raise asyncio.CancelledError
+            if cancellation is not None:
+                raise cancellation
             return result
 
     async def close(self) -> None:

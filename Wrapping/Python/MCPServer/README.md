@@ -9,7 +9,7 @@ It expects the ParaView-side C++ plugin to be loaded and listening first.
 ## Requirements
 
 - Python `>=3.13`
-- `fastmcp>=3.4.7,<4`
+- `fastmcp>=4.0.3,<5`
 
 ## Install
 
@@ -40,15 +40,23 @@ uv sync
 - `PARAVIEW_CONNECT_TIMEOUT_SECONDS` defaults to `30`
 - `PARAVIEW_COMMAND_TIMEOUT_SECONDS` is unset by default, allowing long commands to finish
 
-Commands run one at a time, with up to three additional calls waiting in FIFO order.
-`execute_paraview_code` distinguishes a completed request whose Python code failed from
-a request that never started or whose outcome became unknown after an optional command
-deadline expired. A cancelled waiter is removed before execution. An unknown outcome
-fences the connection until the MCP server restarts so queued work cannot overlap an
-unfinished ParaView command. The legacy `success` field remains in the result alongside
-`request_status` and `execution_status`.
+## Execution and state
 
-## Bridge Protocol
+One command runs at a time, up to three wait in FIFO order, and further calls report busy.
+This prevents concurrent mutations of ParaView's shared state.
+
+Cancelled waiters never execute; cancelling an active call does not stop ParaView.
+`execute_paraview_code` separates `request_status` from `execution_status` and retains
+the `success` field. An `outcome_unknown` blocks further commands until the MCP server
+restarts; inspect ParaView first and never retry automatically.
+
+Python variables and history persist across calls on the same bridge connection.
+Disconnecting or reconnecting resets them without undoing pipeline changes or external
+side effects.
+
+## Bridge protocol
+
+FastMCP 4 supports MCP `2026-07-28` and legacy clients over stdio with the same tools.
 
 The server speaks protocol version `2` to the ParaView plugin and sends:
 

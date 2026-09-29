@@ -105,6 +105,19 @@ def test_get_history_empty(bridge) -> None:
     assert result == []
 
 
+def test_namespace_persists_until_bridge_session_reset(bridge) -> None:
+    bridge.execute_python("counter = 41")
+    result = json.loads(bridge.execute_python("counter += 1\nprint(counter)"))
+    assert result["stdout"] == "42\n"
+    assert len(json.loads(bridge.get_history())) == 2
+
+    bridge.reset_session()
+    assert "counter" not in bridge._ensure_session()
+    assert json.loads(bridge.get_history()) == []
+    # Reconnecting the bridge resets Python bookkeeping, not the GUI pipeline.
+    bridge._ensure_session()["simple"].ResetSession.assert_not_called()
+
+
 def test_get_history_after_execute(bridge) -> None:
     bridge.bootstrap()
     bridge.execute_python("x = 1 + 1")
