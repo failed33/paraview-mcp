@@ -15,6 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   python-coverage:
     name: Python Coverage
     runs-on: ubuntu-latest
@@ -43,15 +46,16 @@ jobs:
           fail_ci_if_error: false
 
   cpp-coverage:
+    needs: versions
     name: C++ Coverage
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}-ci:6.0.1
+    container: ghcr.io/${{ github.repository }}-ci:${{ needs.versions.outputs.ci_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
         run: |
           cmake --preset dev \
-            -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0 \
+            -DParaView_DIR=/opt/paraview/lib/cmake/paraview-${{ needs.versions.outputs.ci_series }} \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="--coverage" \
             -DCMAKE_EXE_LINKER_FLAGS="--coverage" \

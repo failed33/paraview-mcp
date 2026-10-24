@@ -1,0 +1,40 @@
+name: Supported ParaView versions
+
+on:
+  workflow_call:
+    outputs:
+      linux:
+        value: ${{ jobs.manifest.outputs.linux }}
+      macos:
+        value: ${{ jobs.manifest.outputs.macos }}
+      windows:
+        value: ${{ jobs.manifest.outputs.windows }}
+      ci_version:
+        value: ${{ jobs.manifest.outputs.ci_version }}
+      ci_series:
+        value: ${{ jobs.manifest.outputs.ci_series }}
+      ci_commit:
+        value: ${{ jobs.manifest.outputs.ci_commit }}
+
+permissions:
+  contents: read
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    outputs:
+      linux: ${{ steps.versions.outputs.linux }}
+      macos: ${{ steps.versions.outputs.macos }}
+      windows: ${{ steps.versions.outputs.windows }}
+      ci_version: ${{ steps.versions.outputs.ci_version }}
+      ci_series: ${{ steps.versions.outputs.ci_series }}
+      ci_commit: ${{ steps.versions.outputs.ci_commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate manifest and documentation
+        run: python3 scripts/paraview_versions.py
+      - name: Generate build matrices
+        id: versions
+        run: python3 scripts/paraview_versions.py --github-output "$GITHUB_OUTPUT"

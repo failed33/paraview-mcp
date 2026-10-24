@@ -42,11 +42,13 @@ Open **Tools > ParaView MCP** in ParaView, start the bridge, and connect from Cl
 
 Download a pre-built plugin binary from the [latest GitHub Release](https://github.com/failed33/paraview-mcp/releases/latest). Releases provide this matrix:
 
-| Platform | Architecture          | ParaView versions    | Package   |
-| -------- | --------------------- | -------------------- | --------- |
-| Linux    | x86_64                | 5.13.3, 6.0.1, 6.1.1 | `.tar.gz` |
-| macOS    | arm64 (Apple Silicon) | 5.13.3, 6.0.1, 6.1.1 | `.dmg`    |
-| Windows  | x64                   | 5.13.3, 6.0.1, 6.1.1 | `.zip`    |
+<!-- BEGIN supported-paraview-versions -->
+| Platform | Architecture | ParaView versions | Package |
+| --- | --- | --- | --- |
+| Linux | x86_64 | 5.13.3, 6.0.1, 6.1.1, 6.2.0 | `.tar.gz` |
+| macOS | arm64 (Apple Silicon) | 5.13.3, 6.0.1, 6.1.1, 6.2.0 | `.dmg` |
+| Windows | x64 | 5.13.3, 6.0.1, 6.1.1, 6.2.0 | `.zip` |
+<!-- END supported-paraview-versions -->
 
 Choose the package that names your exact ParaView version and platform. Download its
 adjacent `.sha256` file, verify the package, then open or extract it and follow the

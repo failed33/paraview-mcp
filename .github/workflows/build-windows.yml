@@ -1,8 +1,8 @@
-name: Build Windows x64 (ParaView 5.13-6.1)
+name: Build Windows x64
 
-# Builds Windows x64 plugins against the latest patch releases in the supported
-# ParaView 5.13-6.1 range. Official archives do not ship a usable SDK, so each
-# matrix entry builds the matching ParaView source with its Qt and Python ABI.
+# Builds Windows x64 plugins against the supported-version manifest. Official
+# archives do not ship a usable SDK, so each matrix entry builds the matching
+# ParaView source with its Qt and Python ABI.
 #
 # Python major.minor must match because the resulting DLL imports pythonXY.dll
 # by name. Qt imports also resolve by DLL name from ParaView's application dir.
@@ -17,6 +17,9 @@ on:
   pull_request:
     paths:
       - .github/INSTALL_PLUGIN.md
+      - .github/paraview-versions.json
+      - .github/workflows/paraview-versions.yml
+      - scripts/paraview_versions.py
       - .github/workflows/build-windows.yml
       - CMakeLists.txt
       - CMake/**
@@ -26,23 +29,12 @@ on:
       - Testing/Smoke/**
       - THIRD-PARTY-NOTICES.txt
   workflow_dispatch:
-    inputs:
-      verify_official_runtime:
-        description: Load each package with the matching official ParaView runtime
-        required: false
-        type: boolean
-        default: true
   workflow_call:
     inputs:
       package_version:
         description: Version used in archive names; defaults to CMakeLists.txt
         required: false
         type: string
-      verify_official_runtime:
-        description: Load each package with the matching official ParaView runtime
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -52,38 +44,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   build-plugin-windows:
+    name: Windows x64 / ParaView ${{ matrix.paraview_version }}
+    needs: versions
     runs-on: windows-2022
     timeout-minutes: 350
     strategy:
       fail-fast: false
       max-parallel: 3
-      matrix:
-        include:
-          - paraview_version: v5.13.3
-            paraview_commit: d9100e04f9558222bbb48852d03035638812549b
-            paraview_series: '5.13'
-            qt_version: 5.15.2
-            qt_arch: win64_msvc2019_64
-            qt_dir: msvc2019_64
-            python_version: '3.10'
-            runtime_md5: '6d91d4c8684327ca9caaa94abe769925'
-          - paraview_version: v6.0.1
-            paraview_commit: bdd52330012d733d3d6d85702a0498243af46272
-            paraview_series: '6.0'
-            qt_version: 6.9.0
-            qt_arch: win64_msvc2022_64
-            qt_dir: msvc2022_64
-            python_version: '3.12'
-            runtime_md5: '6113e0c799639e38a98bd7b77e4f4bfb'
-          - paraview_version: v6.1.1
-            paraview_commit: c373b13bca0b97680bae8de3e997c056404b9b77
-            paraview_series: '6.1'
-            qt_version: 6.9.0
-            qt_arch: win64_msvc2022_64
-            qt_dir: msvc2022_64
-            python_version: '3.12'
-            runtime_md5: '6e97a803f7a6ccd4e86520d77ac18570'
+      matrix: ${{ fromJSON(needs.versions.outputs.windows) }}
     env:
       PACKAGE_VERSION: ${{ inputs.package_version }}
       PARAVIEW_VERSION: ${{ matrix.paraview_version }}
@@ -93,6 +65,7 @@ jobs:
       QT_ARCH: ${{ matrix.qt_arch }}
       QT_DIR: ${{ matrix.qt_dir }}
       PYTHON_VERSION: ${{ matrix.python_version }}
+      RUNTIME_URL: ${{ matrix.runtime_url }}
       RUNTIME_MD5: ${{ matrix.runtime_md5 }}
       AQTINSTALL_VERSION: 3.3.0
     steps:
@@ -147,7 +120,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             rm -rf /d/pv-src
-            if git clone --recursive --branch "$PARAVIEW_VERSION" --depth 1 \
+            if git clone --recursive --branch "v$PARAVIEW_VERSION" --depth 1 \
               https://gitlab.kitware.com/paraview/paraview.git /d/pv-src; then
               break
             fi
@@ -214,9 +187,18 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$($PWD.Path)/install" `
             -DPython3_EXECUTABLE="$py" `
             -DPython3_FIND_REGISTRY=NEVER `
-            -DBUILD_TESTING=OFF
+            -DBUILD_TESTING=ON
           cmake --build build --parallel
           cmake --install build
+
+      - name: Test plugin
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $env:PATH = "D:/pv-sdk/bin;$env:QT_PREFIX/bin;$env:PATH"
+          ctest --test-dir build --output-on-failure --no-tests=error -E PythonIntegration
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       # Guard against the exact failure seen in the field: a plugin built with a
       # newer Python imports pythonXY.dll by that name, the official ParaView
@@ -266,21 +248,17 @@ jobs:
           echo "CHECKSUM_NAME=$DIR.zip.sha256" >> "$GITHUB_ENV"
 
       - name: Load packaged plugin with official ParaView
-        if: ${{ inputs.verify_official_runtime }}
         shell: pwsh
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          $version = $env:PARAVIEW_VERSION.TrimStart('v')
-          $runtimeFilename = "ParaView-$version-Windows-Python$env:PYTHON_VERSION-msvc2017-AMD64.zip"
-          $runtimeUrl = "https://www.paraview.org/files/v$env:PARAVIEW_SERIES/$runtimeFilename"
           $runtimeArchive = Join-Path $env:RUNNER_TEMP 'paraview-runtime.zip'
           $runtimeRoot = Join-Path $env:RUNNER_TEMP 'paraview-runtime'
           $pluginRoot = Join-Path $env:RUNNER_TEMP 'plugin-package'
 
           curl.exe --fail --location --retry 3 --retry-all-errors `
             --output $runtimeArchive `
-            $runtimeUrl
+            $env:RUNTIME_URL
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           $actualMd5 = (Get-FileHash -Algorithm MD5 $runtimeArchive).Hash.ToLowerInvariant()
@@ -304,7 +282,8 @@ jobs:
           if (-not $pvpython) { Write-Error 'Official pvpython.exe not found'; exit 1 }
           if (-not $plugin) { Write-Error 'Packaged ParaViewMCP.dll not found'; exit 1 }
 
-          & $pvpython.FullName Testing/Smoke/load_plugin.py $plugin.FullName
+          & $pvpython.FullName Testing/Smoke/load_plugin.py $plugin.FullName `
+            --paraview-version $env:PARAVIEW_VERSION --python-version $env:PYTHON_VERSION
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload build artifact

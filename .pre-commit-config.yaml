@@ -26,9 +26,9 @@ repos:
     hooks:
       - id: ruff-check
         args: [--fix]
-        files: ^Wrapping/Python/MCPServer/
+        files: ^(Wrapping/Python/MCPServer/|scripts/paraview_versions\.py$|Testing/(BuildTools|Smoke)/)
       - id: ruff-format
-        files: ^Wrapping/Python/MCPServer/
+        files: ^(Wrapping/Python/MCPServer/|scripts/paraview_versions\.py$|Testing/(BuildTools|Smoke)/)
 
   - repo: https://github.com/facebook/pyrefly-pre-commit
     rev: "1.2.0"
@@ -50,6 +50,12 @@ repos:
         name: version-consistency
         language: system
         entry: python3 scripts/check-versions.py
+        pass_filenames: false
+        always_run: true
+      - id: paraview-versions
+        name: supported-paraview-versions
+        language: system
+        entry: python3 scripts/paraview_versions.py
         pass_filenames: false
         always_run: true
       - id: license-compatibility
