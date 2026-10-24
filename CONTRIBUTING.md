@@ -60,6 +60,7 @@ cmake --build --preset dev
 supported native builds. The three platform workflows, release builds, runtime
 checks, and README table use this manifest. Its `ci_version` selects the SDK
 used for C++ coverage, CodeQL, and the general development CI image.
+List releases newest first so new targets enter the bounded CI matrix first.
 
 To add a release:
 

@@ -45,9 +45,9 @@ Download a pre-built plugin binary from the [latest GitHub Release](https://gith
 <!-- BEGIN supported-paraview-versions -->
 | Platform | Architecture | ParaView versions | Package |
 | --- | --- | --- | --- |
-| Linux | x86_64 | 5.13.3, 6.0.1, 6.1.1, 6.2.0 | `.tar.gz` |
-| macOS | arm64 (Apple Silicon) | 5.13.3, 6.0.1, 6.1.1, 6.2.0 | `.dmg` |
-| Windows | x64 | 5.13.3, 6.0.1, 6.1.1, 6.2.0 | `.zip` |
+| Linux | x86_64 | 6.2.0, 6.1.1, 6.0.1, 5.13.3 | `.tar.gz` |
+| macOS | arm64 (Apple Silicon) | 6.2.0, 6.1.1, 6.0.1, 5.13.3 | `.dmg` |
+| Windows | x64 | 6.2.0, 6.1.1, 6.0.1, 5.13.3 | `.zip` |
 <!-- END supported-paraview-versions -->
 
 Choose the package that names your exact ParaView version and platform. Download its
