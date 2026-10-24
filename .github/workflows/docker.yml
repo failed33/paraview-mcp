@@ -6,13 +6,20 @@ on:
     branches: [main]
     paths:
       - ".github/docker/Dockerfile"
+      - ".github/paraview-versions.json"
+      - ".github/workflows/paraview-versions.yml"
+      - "scripts/paraview_versions.py"
 
 permissions:
   packages: write
   contents: read
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   build-and-push:
+    needs: versions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,8 +33,12 @@ jobs:
         with:
           context: .github/docker
           push: true
+          build-args: |
+            PARAVIEW_VERSION=v${{ needs.versions.outputs.ci_version }}
+            PARAVIEW_SERIES=${{ needs.versions.outputs.ci_series }}
+            PARAVIEW_COMMIT=${{ needs.versions.outputs.ci_commit }}
           tags: |
-            ghcr.io/${{ github.repository }}-ci:6.0.1
+            ghcr.io/${{ github.repository }}-ci:${{ needs.versions.outputs.ci_version }}
             ghcr.io/${{ github.repository }}-ci:latest
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}-ci:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}-ci:buildcache,mode=max

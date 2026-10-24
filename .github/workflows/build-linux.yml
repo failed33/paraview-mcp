@@ -1,4 +1,4 @@
-name: Build Linux x86_64 (ParaView 5.13-6.1)
+name: Build Linux x86_64
 
 # Kitware's official Linux binaries require plugins built in the same release
 # environment. These immutable paraview_org-plugin-devel images are published
@@ -9,6 +9,9 @@ on:
   pull_request:
     paths:
       - .github/INSTALL_PLUGIN.md
+      - .github/paraview-versions.json
+      - .github/workflows/paraview-versions.yml
+      - scripts/paraview_versions.py
       - .github/scripts/build-linux-plugin.sh
       - .github/scripts/load-linux-plugin.sh
       - .github/workflows/build-linux.yml
@@ -20,23 +23,12 @@ on:
       - Testing/Smoke/**
       - THIRD-PARTY-NOTICES.txt
   workflow_dispatch:
-    inputs:
-      verify_official_runtime:
-        description: Load each package with the matching official ParaView runtime
-        required: false
-        type: boolean
-        default: true
   workflow_call:
     inputs:
       package_version:
         description: Version used in archive names; defaults to CMakeLists.txt
         required: false
         type: string
-      verify_official_runtime:
-        description: Load each package with the matching official ParaView runtime
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -46,39 +38,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   build-plugin-linux:
+    name: Linux x86_64 / ParaView ${{ matrix.paraview_version }}
+    needs: versions
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       max-parallel: 3
-      matrix:
-        include:
-          - paraview_version: 5.13.3
-            paraview_series: '5.13'
-            python_version: '3.10'
-            runtime_md5: '7cff200a718e7af717f745d5b65beb28'
-            builder_image: kitware/paraview_org-plugin-devel:5.13.3@sha256:36177a24147a76a36db9cf17e55882b64351f6a8e9b8bf1aaf11ef3510ee0608
-            toolset: devtoolset-7
-          - paraview_version: 6.0.1
-            paraview_series: '6.0'
-            python_version: '3.12'
-            runtime_md5: 'de2be9dcb3bced49f4959bd932aabc0a'
-            builder_image: kitware/paraview_org-plugin-devel:6.0.1@sha256:b2113520d9ac56df3c07807c6f4104cb7859fb00789325e4906a3eab3367da74
-            toolset: gcc-toolset-10
-          - paraview_version: 6.1.1
-            paraview_series: '6.1'
-            python_version: '3.12'
-            runtime_md5: '0111a422aa08ff8c9acac0e83d411a2f'
-            builder_image: kitware/paraview_org-plugin-devel:6.1.1@sha256:d6798bd1ba18c9bf3431b0809b6900536ec59ace8232343133b112f7c2dbbe9c
-            toolset: gcc-toolset-10
+      matrix: ${{ fromJSON(needs.versions.outputs.linux) }}
     env:
       BUILDER_IMAGE: ${{ matrix.builder_image }}
       PACKAGE_VERSION: ${{ inputs.package_version }}
       PARAVIEW_VERSION: ${{ matrix.paraview_version }}
       PARAVIEW_SERIES: ${{ matrix.paraview_series }}
       PYTHON_VERSION: ${{ matrix.python_version }}
+      RUNTIME_URL: ${{ matrix.runtime_url }}
       RUNTIME_MD5: ${{ matrix.runtime_md5 }}
+      FIND_ALL_COMPONENTS: ${{ matrix.find_all_components }}
       TOOLSET: ${{ matrix.toolset }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -100,7 +80,7 @@ jobs:
           archive_dir="ParaViewMCP-${version}-ParaView-${PARAVIEW_VERSION}-linux-x86_64"
           docker run --rm \
             --env ARCHIVE_DIR="$archive_dir" \
-            --env PARAVIEW_SERIES \
+            --env FIND_ALL_COMPONENTS \
             --volume "$GITHUB_WORKSPACE:/workspace" \
             --workdir /workspace \
             "$BUILDER_IMAGE" \
@@ -111,23 +91,21 @@ jobs:
           echo "CHECKSUM_NAME=${archive_dir}.tar.gz.sha256" >> "$GITHUB_ENV"
 
       - name: Download matching official ParaView runtime
-        if: ${{ inputs.verify_official_runtime }}
         run: |
-          runtime_filename="ParaView-${PARAVIEW_VERSION}-MPI-Linux-Python${PYTHON_VERSION}-x86_64.tar.gz"
-          runtime_url="https://www.paraview.org/files/v${PARAVIEW_SERIES}/${runtime_filename}"
           runtime_archive="$RUNNER_TEMP/paraview-runtime.tar.gz"
           curl --fail --location --retry 3 --retry-all-errors \
             --output "$runtime_archive" \
-            "$runtime_url"
+            "$RUNTIME_URL"
           actual_md5="$(md5sum "$runtime_archive" | cut -d ' ' -f 1)"
           test "$actual_md5" = "$RUNTIME_MD5"
           sha256sum "$runtime_archive"
 
       - name: Load packaged plugin with official ParaView
-        if: ${{ inputs.verify_official_runtime }}
         run: |
           docker run --rm \
             --env ARCHIVE_NAME \
+            --env PARAVIEW_VERSION \
+            --env PYTHON_VERSION \
             --env QT_QPA_PLATFORM=offscreen \
             --volume "$GITHUB_WORKSPACE:/workspace:ro" \
             --volume "$RUNNER_TEMP:/runtime:ro" \

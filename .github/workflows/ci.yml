@@ -15,6 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -43,6 +46,8 @@ jobs:
           pre-commit run commitlint --hook-stage commit-msg \
             --commit-msg-filename "$title_file"
       - run: pre-commit run --all-files
+      - name: Test supported-version manifest
+        run: python3 -m unittest discover -s Testing/BuildTools -v
 
   python:
     runs-on: ubuntu-latest
@@ -72,12 +77,13 @@ jobs:
         working-directory: .
 
   cpp:
+    needs: versions
     runs-on: ubuntu-latest
-    container: ghcr.io/${{ github.repository }}-ci:6.0.1
+    container: ghcr.io/${{ github.repository }}-ci:${{ needs.versions.outputs.ci_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
-        run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
+        run: cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-${{ needs.versions.outputs.ci_series }}
       - name: Build
         run: cmake --build --preset dev
       - name: Test

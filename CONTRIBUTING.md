@@ -4,7 +4,7 @@ Thank you for your interest in contributing to ParaView MCP!
 
 ## Prerequisites
 
-- [ParaView 5.13.3, 6.0.1, or 6.1.1](https://www.paraview.org/download/) SDK (for plugin development)
+- A [ParaView](https://www.paraview.org/download/) SDK from the [supported-version manifest](.github/paraview-versions.json) for plugin development
 - [CMake](https://cmake.org/) 3.24+
 - [Ninja](https://ninja-build.org/) build system
 - [Python](https://www.python.org/) 3.13+
@@ -53,6 +53,40 @@ Or use the CMake presets:
 cmake --preset dev -DParaView_DIR=/path/to/paraview/lib/cmake/paraview-X.Y
 cmake --build --preset dev
 ```
+
+### Supported ParaView versions
+
+[`.github/paraview-versions.json`](.github/paraview-versions.json) defines the
+supported native builds. The three platform workflows, release builds, runtime
+checks, and README table use this manifest. Its `ci_version` selects the SDK
+used for C++ coverage, CodeQL, and the general development CI image.
+List releases newest first so new targets enter the bounded CI matrix first.
+
+To add a release:
+
+1. Add its exact ParaView version and source commit, matching Qt and Python
+   versions, and all three platform configurations. Pin the Linux
+   `paraview_org-plugin-devel` image by digest. Set `find_all_components` to `ON`
+   only for SDKs that need the legacy CMake component workaround.
+2. Obtain runtime checksums from the official release's `md5sum.txt`. Confirm
+   Qt against the release superbuild's `.gitlab/ci/download_qt6.cmake`.
+3. Run `python3 scripts/paraview_versions.py --write-docs`, then
+   `python3 scripts/paraview_versions.py` and
+   `python3 -m unittest discover -s Testing/BuildTools -v`.
+4. Open a PR and require all native matrix entries to pass. Each entry builds
+   and runs the C++ tests, then loads the packaged plugin in the matching
+   official ParaView runtime and exercises execution, pipeline inspection,
+   history, errors, and session reset. These smoke checks do not render images
+   or test the interactive toolbar and inspection window.
+
+Inspect a generated matrix with
+`python3 scripts/paraview_versions.py --platform linux`, `--platform macos`, or
+`--platform windows`. Windows and macOS retain their existing SDK caches and
+source-build fallback. Durable SDK publication is tracked separately in
+[issue #53](https://github.com/failed33/paraview-mcp/issues/53).
+
+Packages remain specific to a ParaView version and platform. Users load them
+through **Tools > Manage Plugins** and can enable **Auto Load** as usual.
 
 ### Developer Tooling
 

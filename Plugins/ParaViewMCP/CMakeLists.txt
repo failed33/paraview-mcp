@@ -153,6 +153,13 @@ target_link_libraries(
     ParaViewMCPBridgeCore
 )
 
+if(APPLE)
+  # ParaView's exported targets include SDK-private third-party libraries that
+  # may not exist in the official app (for example, vtkfreetype in ParaView 6.2).
+  # Retain load commands only for dylibs that supply symbols used by the plugin.
+  target_link_options(ParaViewMCP PRIVATE "LINKER:-dead_strip_dylibs")
+endif()
+
 paraview_mcp_configure_target(ParaViewMCP)
 paraview_mcp_add_format_targets(
   BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

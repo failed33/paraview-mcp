@@ -1,10 +1,9 @@
-name: Build macOS arm64 (ParaView 5.13-6.1)
+name: Build macOS arm64
 
-# Standalone, manually-triggered Apple Silicon builds of the ParaViewMCP plugin
-# against the latest patch releases in the supported ParaView 5.13-6.1 range.
+# Builds Apple Silicon plugins against the supported-version manifest.
 #
 # IMPORTANT: the plugin must be built against a binary-compatible Qt and Python
-# for the target ParaView series. The matrix records those ABIs explicitly.
+# for the target ParaView series. The manifest records those ABIs explicitly.
 # Qt 6 comes from aqtinstall; Qt 5 arm64 comes from Kitware's checksum-pinned
 # package used for ParaView builds.
 #
@@ -15,6 +14,9 @@ on:
   pull_request:
     paths:
       - .github/INSTALL_PLUGIN.md
+      - .github/paraview-versions.json
+      - .github/workflows/paraview-versions.yml
+      - scripts/paraview_versions.py
       - .github/workflows/build-macos.yml
       - CMakeLists.txt
       - CMake/**
@@ -24,23 +26,12 @@ on:
       - Testing/Smoke/**
       - THIRD-PARTY-NOTICES.txt
   workflow_dispatch:
-    inputs:
-      verify_official_runtime:
-        description: Load each package with the matching official ParaView runtime
-        required: false
-        type: boolean
-        default: true
   workflow_call:
     inputs:
       package_version:
         description: Version used in archive names; defaults to CMakeLists.txt
         required: false
         type: string
-      verify_official_runtime:
-        description: Load each package with the matching official ParaView runtime
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -50,38 +41,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   build-plugin-macos:
+    name: macOS arm64 / ParaView ${{ matrix.paraview_version }}
+    needs: versions
     runs-on: macos-14
     timeout-minutes: 350
     strategy:
       fail-fast: false
       max-parallel: 3
-      matrix:
-        include:
-          - paraview_version: v5.13.3
-            paraview_commit: d9100e04f9558222bbb48852d03035638812549b
-            paraview_series: '5.13'
-            qt_version: 5.15.2
-            python_version: '3.10'
-            runtime_md5: '347a941bb52a4eb6c782ed9960099b25'
-          - paraview_version: v6.0.1
-            paraview_commit: bdd52330012d733d3d6d85702a0498243af46272
-            paraview_series: '6.0'
-            qt_version: 6.9.0
-            python_version: '3.12'
-            runtime_md5: 'b304d171a7596217289256e489e1a95e'
-          - paraview_version: v6.1.1
-            paraview_commit: c373b13bca0b97680bae8de3e997c056404b9b77
-            paraview_series: '6.1'
-            qt_version: 6.9.0
-            python_version: '3.12'
-            runtime_md5: 'da00d5de3325dbdcc927ea5485055182'
+      matrix: ${{ fromJSON(needs.versions.outputs.macos) }}
     env:
       PACKAGE_VERSION: ${{ inputs.package_version }}
       PARAVIEW_VERSION: ${{ matrix.paraview_version }}
       PARAVIEW_COMMIT: ${{ matrix.paraview_commit }}
       PARAVIEW_SERIES: ${{ matrix.paraview_series }}
       QT_VERSION: ${{ matrix.qt_version }}
+      RUNTIME_URL: ${{ matrix.runtime_url }}
       RUNTIME_MD5: ${{ matrix.runtime_md5 }}
       AQTINSTALL_VERSION: 3.3.0
       # Python bundled by the matching official ParaView .app. Only major.minor
@@ -155,7 +133,7 @@ jobs:
           fi
           for attempt in 1 2 3; do
             rm -rf /tmp/paraview-src
-            if git clone --recursive --branch "${PARAVIEW_VERSION}" --depth 1 \
+            if git clone --recursive --branch "v${PARAVIEW_VERSION}" --depth 1 \
               https://gitlab.kitware.com/paraview/paraview.git /tmp/paraview-src; then
               break
             fi
@@ -226,10 +204,15 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="$PWD/install" \
             -DPython3_EXECUTABLE="${{ steps.python.outputs.python-path }}" \
-            -DBUILD_TESTING=OFF
+            -DBUILD_TESTING=ON
 
       - name: Build plugin
         run: cmake --build build --parallel "$(sysctl -n hw.ncpu)"
+
+      - name: Test plugin
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build --output-on-failure --no-tests=error -E PythonIntegration
 
       - name: Install plugin
         run: cmake --install build
@@ -308,20 +291,16 @@ jobs:
           echo "CHECKSUM_NAME=${ARCHIVE_DIR}.tar.gz.sha256" >> "$GITHUB_ENV"
 
       - name: Load packaged plugin with official ParaView
-        if: ${{ inputs.verify_official_runtime }}
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          version="${PARAVIEW_VERSION#v}"
-          runtime_filename="ParaView-${version}-MPI-OSX11.0-Python${PYTHON_VERSION}-arm64.dmg"
-          runtime_url="https://www.paraview.org/files/v${PARAVIEW_SERIES}/${runtime_filename}"
           runtime_dmg="$RUNNER_TEMP/paraview-runtime.dmg"
           mount_dir="$RUNNER_TEMP/paraview-volume"
           plugin_root="$(mktemp -d)"
 
           curl --fail --location --retry 3 --retry-all-errors \
             --output "$runtime_dmg" \
-            "$runtime_url"
+            "$RUNTIME_URL"
           actual_md5="$(md5 -q "$runtime_dmg")"
           test "$actual_md5" = "$RUNTIME_MD5"
           shasum -a 256 "$runtime_dmg"
@@ -340,7 +319,9 @@ jobs:
           plugin="$(find "$plugin_root" -name ParaViewMCP.so -print -quit)"
           test -x "$pvpython"
           test -f "$plugin"
-          "$pvpython" Testing/Smoke/load_plugin.py "$plugin"
+          env -u DYLD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH \
+            "$pvpython" Testing/Smoke/load_plugin.py "$plugin" \
+            --paraview-version "$PARAVIEW_VERSION" --python-version "$PYTHON_VERSION"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

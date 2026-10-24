@@ -3,10 +3,7 @@
 set -euxo pipefail
 
 : "${ARCHIVE_DIR:?ARCHIVE_DIR is required}"
-: "${PARAVIEW_SERIES:?PARAVIEW_SERIES is required}"
-
-legacy_component_flag=OFF
-[[ "$PARAVIEW_SERIES" == "6.1" ]] || legacy_component_flag=ON
+: "${FIND_ALL_COMPONENTS:?FIND_ALL_COMPONENTS is required}"
 
 cmake \
   -S . \
@@ -14,9 +11,10 @@ cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/workspace/install \
   -DCMAKE_PREFIX_PATH=/builds/gitlab-kitware-sciviz-ci/build/install \
-  -DPARAVIEW_MCP_FIND_ALL_PARAVIEW_COMPONENTS="$legacy_component_flag" \
-  -DBUILD_TESTING=OFF
+  -DPARAVIEW_MCP_FIND_ALL_PARAVIEW_COMPONENTS="$FIND_ALL_COMPONENTS" \
+  -DBUILD_TESTING=ON
 cmake --build build --parallel 2 --verbose
+QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure --no-tests=error -E PythonIntegration
 cmake --install build
 
 plugin=$(find install -name ParaViewMCP.so -print -quit)

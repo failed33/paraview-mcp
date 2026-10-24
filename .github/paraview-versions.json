@@ -1,0 +1,85 @@
+{
+  "ci_version": "6.0.1",
+  "versions": [
+    {
+      "paraview_version": "6.2.0",
+      "paraview_commit": "fbc86500975a664d629883ccc78be0bd377507ff",
+      "python_version": "3.12",
+      "qt_version": "6.9.0",
+      "linux": {
+        "runtime_md5": "f05c9c7a1c893216d8c4f18460747019",
+        "builder_image": "kitware/paraview_org-plugin-devel:6.2.0@sha256:e68112f38c2a9e23cc38f0cdd8c2350ddbb04efaaa4dea896275600c1f4ea0a2",
+        "toolset": "gcc-toolset-10",
+        "find_all_components": "OFF"
+      },
+      "macos": {
+        "runtime_md5": "da42f88053721a0574bc52fec290fa06"
+      },
+      "windows": {
+        "qt_arch": "win64_msvc2022_64",
+        "qt_dir": "msvc2022_64",
+        "runtime_md5": "0b33d7c6130b871f65180f2f4f4a1a02"
+      }
+    },
+    {
+      "paraview_version": "6.1.1",
+      "paraview_commit": "c373b13bca0b97680bae8de3e997c056404b9b77",
+      "python_version": "3.12",
+      "qt_version": "6.9.0",
+      "linux": {
+        "runtime_md5": "0111a422aa08ff8c9acac0e83d411a2f",
+        "builder_image": "kitware/paraview_org-plugin-devel:6.1.1@sha256:1ca4657a1b4113dbd94f3e5488c56f3c8f3f16e94b8f43d6fa44d3be3c5c80a4",
+        "toolset": "gcc-toolset-10",
+        "find_all_components": "OFF"
+      },
+      "macos": {
+        "runtime_md5": "da00d5de3325dbdcc927ea5485055182"
+      },
+      "windows": {
+        "qt_arch": "win64_msvc2022_64",
+        "qt_dir": "msvc2022_64",
+        "runtime_md5": "6e97a803f7a6ccd4e86520d77ac18570"
+      }
+    },
+    {
+      "paraview_version": "6.0.1",
+      "paraview_commit": "bdd52330012d733d3d6d85702a0498243af46272",
+      "python_version": "3.12",
+      "qt_version": "6.9.0",
+      "linux": {
+        "runtime_md5": "de2be9dcb3bced49f4959bd932aabc0a",
+        "builder_image": "kitware/paraview_org-plugin-devel:6.0.1@sha256:cad569fca1a6fac0d5df8d2da7d757956f34bc4761ee8812d9426b36e1f01436",
+        "toolset": "gcc-toolset-10",
+        "find_all_components": "ON"
+      },
+      "macos": {
+        "runtime_md5": "b304d171a7596217289256e489e1a95e"
+      },
+      "windows": {
+        "qt_arch": "win64_msvc2022_64",
+        "qt_dir": "msvc2022_64",
+        "runtime_md5": "6113e0c799639e38a98bd7b77e4f4bfb"
+      }
+    },
+    {
+      "paraview_version": "5.13.3",
+      "paraview_commit": "d9100e04f9558222bbb48852d03035638812549b",
+      "python_version": "3.10",
+      "qt_version": "5.15.2",
+      "linux": {
+        "runtime_md5": "7cff200a718e7af717f745d5b65beb28",
+        "builder_image": "kitware/paraview_org-plugin-devel:5.13.3@sha256:36177a24147a76a36db9cf17e55882b64351f6a8e9b8bf1aaf11ef3510ee0608",
+        "toolset": "devtoolset-7",
+        "find_all_components": "ON"
+      },
+      "macos": {
+        "runtime_md5": "347a941bb52a4eb6c782ed9960099b25"
+      },
+      "windows": {
+        "qt_arch": "win64_msvc2019_64",
+        "qt_dir": "msvc2019_64",
+        "runtime_md5": "6d91d4c8684327ca9caaa94abe769925"
+      }
+    }
+  ]
+}

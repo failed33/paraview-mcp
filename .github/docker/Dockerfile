@@ -6,7 +6,8 @@
 FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG PARAVIEW_VERSION=v6.0.1
+ARG PARAVIEW_VERSION
+ARG PARAVIEW_COMMIT
 
 # Build-time dependencies only (not carried to runtime image)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -36,7 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 RUN git clone --recursive --branch ${PARAVIEW_VERSION} --depth 1 \
-    https://gitlab.kitware.com/paraview/paraview.git
+    https://gitlab.kitware.com/paraview/paraview.git \
+    && test "$(git -C paraview rev-parse HEAD)" = "${PARAVIEW_COMMIT}"
 
 WORKDIR /build/paraview
 RUN cmake -S /src/paraview -B . \
@@ -61,6 +63,7 @@ RUN cmake -S /src/paraview -B . \
 # =============================================================================
 FROM ubuntu:24.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
+ARG PARAVIEW_SERIES
 
 # Runtime libraries (Qt6, GL, X11) + dev tools for plugin builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -91,7 +94,7 @@ COPY --from=builder /opt/paraview /opt/paraview
 ENV PATH="/opt/paraview/bin:${PATH}"
 ENV CMAKE_PREFIX_PATH="/opt/paraview/lib/cmake"
 ENV LD_LIBRARY_PATH="/opt/paraview/lib"
-ENV ParaView_DIR="/opt/paraview/lib/cmake/paraview-6.0"
+ENV ParaView_DIR="/opt/paraview/lib/cmake/paraview-${PARAVIEW_SERIES}"
 
 WORKDIR /workspace
 CMD ["/bin/bash"]

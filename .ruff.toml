@@ -1,0 +1,4 @@
+extend = "Wrapping/Python/MCPServer/pyproject.toml"
+
+# Build helpers and embedded smoke tests also run with ParaView's Python 3.10.
+target-version = "py310"

@@ -15,7 +15,11 @@ permissions:
   packages: read
 
 jobs:
+  versions:
+    uses: ./.github/workflows/paraview-versions.yml
+
   analyze:
+    needs: versions
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -26,7 +30,7 @@ jobs:
         include:
           - language: c-cpp
             build-mode: manual
-            container: ghcr.io/failed33/paraview-mcp-ci:6.0.1
+            container: ghcr.io/${{ github.repository }}-ci:${{ needs.versions.outputs.ci_version }}
           - language: python
             build-mode: none
             container: ""
@@ -44,7 +48,7 @@ jobs:
       - name: Build (C++)
         if: matrix.build-mode == 'manual'
         run: |
-          cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-6.0
+          cmake --preset dev -DParaView_DIR=/opt/paraview/lib/cmake/paraview-${{ needs.versions.outputs.ci_series }}
           cmake --build --preset dev
 
       - name: Perform CodeQL Analysis
