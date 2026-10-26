@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.4...ParaViewMCP-v0.2.5) (2026-10-24)
+
+
+### Features
+
+* **ci:** consolidate ParaView builds and add 6.2 support ([#88](https://github.com/failed33/paraview-mcp/issues/88)) ([29ad76c](https://github.com/failed33/paraview-mcp/commit/29ad76c7f5013192fd38e1b8fd8a5eb98f7c859c))
+
 ## [0.2.4](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.3...ParaViewMCP-v0.2.4) (2026-09-29)
 
 
