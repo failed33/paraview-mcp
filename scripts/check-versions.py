@@ -43,17 +43,17 @@ def project_lock_version() -> str:
 
 def release_managed_paths(
     config: dict[str, Any],
-) -> tuple[set[str], set[tuple[str, str]]]:
+) -> tuple[set[str], set[tuple[str, str, str]]]:
     extra_files = config["packages"]["."]["extra-files"]
     generic_paths = {
         entry["path"] for entry in extra_files if entry.get("type") == "generic"
     }
-    json_targets = {
-        (entry["path"], entry["jsonpath"])
+    structured_targets = {
+        (entry["type"], entry["path"], entry["jsonpath"])
         for entry in extra_files
-        if entry.get("type") == "json"
+        if entry.get("type") in {"json", "toml"}
     }
-    return generic_paths, json_targets
+    return generic_paths, structured_targets
 
 
 def main() -> int:
@@ -108,17 +108,13 @@ def main() -> int:
             python_init,
             rf'^__version__ = "{escaped_version}"\s*# x-release-please-version$',
         ),
-        "Wrapping/Python/MCPServer/uv.lock": (
-            read_text("Wrapping/Python/MCPServer/uv.lock"),
-            rf'^version = "{escaped_version}"\s*# x-release-please-version$',
-        ),
     }
     for path, (content, marker_pattern) in marker_files.items():
         if re.search(marker_pattern, content, flags=re.MULTILINE) is None:
             errors.append(f"{path} is missing its version-line Release Please marker")
 
     release_config = json.loads(read_text("release-please-config.json"))
-    generic_paths, json_targets = release_managed_paths(release_config)
+    generic_paths, structured_targets = release_managed_paths(release_config)
     missing_generic_paths = marker_files.keys() - generic_paths
     if missing_generic_paths:
         errors.append(
@@ -126,16 +122,23 @@ def main() -> int:
             + ", ".join(sorted(missing_generic_paths))
         )
 
-    expected_json_targets = {
-        ("server.json", "$.version"),
-        ("server.json", "$.packages[0].version"),
+    expected_structured_targets = {
+        ("json", "server.json", "$.version"),
+        ("json", "server.json", "$.packages[0].version"),
+        # The TOML updater exposes the string's parsed value in filters.
+        (
+            "toml",
+            "Wrapping/Python/MCPServer/uv.lock",
+            "$.package[?(@.name.value=='paraview-mcp-server')].version",
+        ),
     }
-    missing_json_targets = expected_json_targets - json_targets
-    if missing_json_targets:
+    missing_structured_targets = expected_structured_targets - structured_targets
+    if missing_structured_targets:
         errors.append(
             "Release Please does not manage: "
             + ", ".join(
-                f"{path} {jsonpath}" for path, jsonpath in sorted(missing_json_targets)
+                f"{path} {jsonpath}"
+                for _, path, jsonpath in sorted(missing_structured_targets)
             )
         )
 

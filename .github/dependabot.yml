@@ -11,7 +11,7 @@ updates:
     schedule:
       interval: "weekly"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directory: "/Wrapping/Python/MCPServer"
     commit-message:
       prefix: "chore(deps)"
@@ -20,6 +20,10 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/.github/docker"
+    ignore:
+      # Ubuntu 24.04 provides the Python 3.12 ABI used by the CI ParaView SDK.
+      - dependency-name: "ubuntu"
+        versions: [">24.04"]
     commit-message:
       prefix: "chore(deps)"
     schedule:

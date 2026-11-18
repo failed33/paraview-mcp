@@ -32,8 +32,9 @@
           "path": "Wrapping/Python/MCPServer/src/paraview_mcp/__init__.py"
         },
         {
-          "type": "generic",
-          "path": "Wrapping/Python/MCPServer/uv.lock"
+          "type": "toml",
+          "path": "Wrapping/Python/MCPServer/uv.lock",
+          "jsonpath": "$.package[?(@.name.value=='paraview-mcp-server')].version"
         },
         {
           "type": "json",

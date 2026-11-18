@@ -3,7 +3,7 @@
 # This layer is expensive (~30 min) and cached independently. It only
 # invalidates when the base image, Qt version, or ParaView version changes.
 # =============================================================================
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 ARG PARAVIEW_VERSION
@@ -61,7 +61,7 @@ RUN cmake -S /src/paraview -B . \
 # Stage 2: Runtime SDK image
 # Changes here (adding tools, packages) do NOT rebuild ParaView.
 # =============================================================================
-FROM ubuntu:24.04 AS runtime
+FROM ubuntu:24.04@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 ARG PARAVIEW_SERIES
 
