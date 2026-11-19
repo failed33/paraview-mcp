@@ -15,6 +15,7 @@ on:
     paths:
       - .github/INSTALL_PLUGIN.md
       - .github/paraview-versions.json
+      - .github/patches/paraview-5.13.3-vtkm-clang.patch
       - .github/workflows/paraview-versions.yml
       - scripts/paraview_versions.py
       - .github/workflows/build-macos.yml
@@ -123,7 +124,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2
+          key: >-
+            paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2${{
+              matrix.paraview_version == '5.13.3' && format('-{0}', hashFiles('.github/patches/paraview-5.13.3-vtkm-clang.patch')) || ''
+            }}
 
       - name: Build ParaView SDK
         if: steps.cache-paraview.outputs.cache-hit != 'true'
@@ -145,9 +149,13 @@ jobs:
             sleep $((attempt * 5))
           done
           test "$(git -C /tmp/paraview-src rev-parse HEAD)" = "${PARAVIEW_COMMIT}"
+          cd /tmp/paraview-src
+          if [[ "$PARAVIEW_VERSION" == 5.13.3 ]]; then
+            git -C VTK/ThirdParty/vtkm/vtkvtkm/vtk-m apply \
+              "$GITHUB_WORKSPACE/.github/patches/paraview-5.13.3-vtkm-clang.patch"
+          fi
           # Idempotent Qt6 .arg(enum) cast normalizer. This is a no-op when the
           # source already contains the required casts.
-          cd /tmp/paraview-src
           for f in \
             "Qt/Core/pqFlatTreeViewEventTranslator.cxx" \
             "Qt/Core/pqQVTKWidgetEventTranslator.cxx" \
@@ -188,7 +196,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2
+          key: ${{ steps.cache-paraview.outputs.cache-primary-key }}
 
       # --- Plugin, built against the same Qt ABI ------------------------------
       - name: Configure plugin

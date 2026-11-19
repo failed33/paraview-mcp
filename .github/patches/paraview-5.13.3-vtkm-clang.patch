@@ -1,0 +1,28 @@
+Backport of https://gitlab.kitware.com/vtk/vtk-m/-/commit/674d370b3d021d6352045f09ce69f84c41e863cd
+
+diff --git a/vtkm/internal/VariantImplDetail.h b/vtkm/internal/VariantImplDetail.h
+index 89f10818c5..ce0b13dd7b 100644
+--- a/vtkm/internal/VariantImplDetail.h
++++ b/vtkm/internal/VariantImplDetail.h
+@@ -731,7 +731,7 @@ struct VariantCases
+         // just the one that it currently holds.
+         return f(storage.V7, std::forward<Args>(args)...);
+       default:
+-        return VariantCases<NumCases - 8>::template CastAndCall(
++        return VariantCases<NumCases - 8>::template CastAndCall<>(
+           index - 8, std::forward<Functor>(f), storage.Remaining, std::forward<Args>(args)...);
+     }
+   }
+diff --git a/vtkm/internal/VariantImplDetail.h.in b/vtkm/internal/VariantImplDetail.h.in
+index 46bebecc7f..256d58625b 100644
+--- a/vtkm/internal/VariantImplDetail.h.in
++++ b/vtkm/internal/VariantImplDetail.h.in
+@@ -400,7 +400,7 @@ $for(param_index in range(max_expanded))\
+         return f(storage.V$(param_index), std::forward<Args>(args)...);
+ $endfor\
+       default:
+-        return VariantCases<NumCases - $(max_expanded)>::template CastAndCall(
++        return VariantCases<NumCases - $(max_expanded)>::template CastAndCall<>(
+           index - $(max_expanded), std::forward<Functor>(f), storage.Remaining, std::forward<Args>(args)...);
+     }
+   }
