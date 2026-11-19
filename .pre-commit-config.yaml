@@ -22,7 +22,7 @@ repos:
         files: \.(h|cxx)$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.2
+    rev: v0.17.5
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -31,7 +31,7 @@ repos:
         files: ^(Wrapping/Python/MCPServer/|scripts/paraview_versions\.py$|Testing/(BuildTools|Smoke)/)
 
   - repo: https://github.com/facebook/pyrefly-pre-commit
-    rev: "1.2.0"
+    rev: "1.4.1"
     hooks:
       - id: pyrefly-check
         pass_filenames: false
@@ -41,6 +41,7 @@ repos:
     hooks:
       - id: commitlint
         stages: [commit-msg]
+        language_version: "24.22.3"
         pass_filenames: true
         additional_dependencies: ["@commitlint/config-conventional"]
 

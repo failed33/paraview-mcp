@@ -47,7 +47,7 @@ jobs:
   build-plugin-macos:
     name: macOS arm64 / ParaView ${{ matrix.paraview_version }}
     needs: versions
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 350
     strategy:
       fail-fast: false
@@ -55,6 +55,10 @@ jobs:
       matrix: ${{ fromJSON(needs.versions.outputs.macos) }}
     env:
       PACKAGE_VERSION: ${{ inputs.package_version }}
+      # Match the minimum OS in the published macOS 14 runner builds.
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+      # Xcode 16.3+ breaks the VTK-m, zlib and libpng bundled with ParaView 5.13.3.
+      LEGACY_XCODE_VERSION: ${{ matrix.paraview_version == '5.13.3' && '16.2' || '' }}
       PARAVIEW_VERSION: ${{ matrix.paraview_version }}
       PARAVIEW_COMMIT: ${{ matrix.paraview_commit }}
       PARAVIEW_SERIES: ${{ matrix.paraview_series }}
@@ -72,12 +76,20 @@ jobs:
 
       - name: Set up Python ${{ env.PYTHON_VERSION }} (matching ParaView)
         id: python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install build tools
         run: brew install cmake ninja
+
+      - name: Select Xcode ${{ env.LEGACY_XCODE_VERSION }} for ParaView 5.13.3
+        if: env.LEGACY_XCODE_VERSION != ''
+        run: |
+          export DEVELOPER_DIR="/Applications/Xcode_${LEGACY_XCODE_VERSION}.app/Contents/Developer"
+          xcodebuild -version
+          xcrun clang --version
+          printf 'DEVELOPER_DIR=%s\n' "$DEVELOPER_DIR" >> "$GITHUB_ENV"
 
       # --- Qt version matching the target ParaView binary ---------------------
       - name: Restore Qt cache
@@ -121,7 +133,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2
+          key: >-
+            paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2${{
+              env.LEGACY_XCODE_VERSION != '' && format('-xcode{0}', env.LEGACY_XCODE_VERSION) || ''
+            }}
 
       - name: Build ParaView SDK
         if: steps.cache-paraview.outputs.cache-hit != 'true'
@@ -186,7 +201,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/paraview-sdk
-          key: paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2
+          key: ${{ steps.cache-paraview.outputs.cache-primary-key }}
 
       # --- Plugin, built against the same Qt ABI ------------------------------
       - name: Configure plugin
@@ -230,6 +245,11 @@ jobs:
         run: |
           SO=$(find install -name ParaViewMCP.so -print -quit)
           test -n "$SO"
+          minimum_os=$(xcrun vtool -show-build "$SO" | awk '$1 == "minos" { print $2 }')
+          if [[ "$minimum_os" != "$MACOSX_DEPLOYMENT_TARGET" ]]; then
+            echo "Expected minimum macOS $MACOSX_DEPLOYMENT_TARGET, got $minimum_os" >&2
+            exit 1
+          fi
           otool -L "$SO" | awk \
             'NR > 1 && $1 ~ /Qt[A-Za-z0-9]+[.]framework/ && index($1, "/Versions/") {print $1}' | while read -r old; do
             fw=$(basename "$old")
