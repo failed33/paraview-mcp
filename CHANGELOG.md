@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.6](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.5...ParaViewMCP-v0.2.6) (2026-11-19)
+
+
+### Bug Fixes
+
+* **ci:** avoid built-in target macros in ParaView 5.13.3 ([210c3f0](https://github.com/failed33/paraview-mcp/commit/210c3f0e59809d175a30f3b1a3914b54b41f8c7c))
+* **ci:** backport VTK-m Clang fix for ParaView 5.13.3 ([9e24479](https://github.com/failed33/paraview-mcp/commit/9e244790eaa0600953eeb1f90793fc8201676aab))
+* **ci:** backport zlib macOS compiler fix for ParaView 5.13.3 ([6010989](https://github.com/failed33/paraview-mcp/commit/6010989f84990d1ac1377a62a404028bc205011d))
+* **ci:** update dependencies and repair native builds ([40754b3](https://github.com/failed33/paraview-mcp/commit/40754b3c79e77946fd0a4674b97cc014dce42470))
+* **ci:** update dependencies and repair native builds ([c36034c](https://github.com/failed33/paraview-mcp/commit/c36034caaa81f369b4c6f3f365b8d8a9cd9e4a36))
+* **ci:** use Xcode 16.2 for macOS ParaView 5.13.3 ([b822b80](https://github.com/failed33/paraview-mcp/commit/b822b80dcad45cd4acbc8f1ed2270a03e0503cac))
+
 ## [0.2.5](https://github.com/failed33/paraview-mcp/compare/ParaViewMCP-v0.2.4...ParaViewMCP-v0.2.5) (2026-10-24)
 
 
