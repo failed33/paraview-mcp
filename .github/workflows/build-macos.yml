@@ -15,7 +15,7 @@ on:
     paths:
       - .github/INSTALL_PLUGIN.md
       - .github/paraview-versions.json
-      - .github/patches/paraview-5.13.3-vtkm-clang.patch
+      - .github/patches/paraview-5.13.3-*.patch
       - .github/workflows/paraview-versions.yml
       - scripts/paraview_versions.py
       - .github/workflows/build-macos.yml
@@ -126,7 +126,7 @@ jobs:
           path: /tmp/paraview-sdk
           key: >-
             paraview-${{ env.PARAVIEW_COMMIT }}-macos-arm64-qt${{ env.QT_VERSION }}-py${{ env.PYTHON_VERSION }}-v2${{
-              matrix.paraview_version == '5.13.3' && format('-{0}', hashFiles('.github/patches/paraview-5.13.3-vtkm-clang.patch')) || ''
+              matrix.paraview_version == '5.13.3' && format('-{0}', hashFiles('.github/patches/paraview-5.13.3-*.patch')) || ''
             }}
 
       - name: Build ParaView SDK
@@ -151,6 +151,7 @@ jobs:
           test "$(git -C /tmp/paraview-src rev-parse HEAD)" = "${PARAVIEW_COMMIT}"
           cd /tmp/paraview-src
           if [[ "$PARAVIEW_VERSION" == 5.13.3 ]]; then
+            git -C VTK apply "$GITHUB_WORKSPACE/.github/patches/paraview-5.13.3-zlib-clang.patch"
             git -C VTK/ThirdParty/vtkm/vtkvtkm/vtk-m apply \
               "$GITHUB_WORKSPACE/.github/patches/paraview-5.13.3-vtkm-clang.patch"
           fi
